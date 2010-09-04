@@ -185,7 +185,12 @@ except ImportError:
 
 
 from tempfile import gettempdir
-import mlabraw
+#added to allow customized mlabraw:
+sys.path.insert(0, '../settings')
+import settings
+mlabraw_name = 'mlabraw_matlab%s.mlabraw' % settings.MATLAB_VERSION
+__import__(mlabraw_name)
+mlabraw = sys.modules[mlabraw_name]
 
 from awmstools import update, gensym, slurp, spitOut, isString, escape, strToTempfile, __saveVarsHelper
 
