@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import unittest
-import parameterchanger
-from script import Script
-import parameterchanger
+import sys
 from parameterchanger import ParameterChangerManager
+sys.path.insert(0, '../settings')
+import settings
 
 class TestDepends(unittest.TestCase):
 
@@ -12,7 +12,7 @@ class TestDepends(unittest.TestCase):
 
     def test_numpy(self):
       import numpy
-
+      
     def test_scipy(self):
       import scipy
     
@@ -22,8 +22,12 @@ class TestDepends(unittest.TestCase):
     def test_pygtk(self):
       import pygtk
     
-    def test_matlabwrap(self):
-      import mlabraw
+    def test_matlabraw(self):
+      import settings
+      mlabraw_name = 'mlabraw_matlab%s.mlabraw' % settings.MATLAB_VERSION
+      __import__(mlabraw_name)
+      mlabraw = sys.modules[mlabraw_name]
+
 
 
 if __name__ == '__main__':
