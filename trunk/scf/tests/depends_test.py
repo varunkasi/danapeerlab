@@ -24,7 +24,7 @@ class TestDepends(unittest.TestCase):
     
     def test_matlabraw(self):
       import settings
-      mlabraw_name = 'mlabraw_matlab%s.mlabraw' % settings.MATLAB_VERSION
+      mlabraw_name = 'mlabraw_matlab_%s.mlabraw' % settings.MATLAB_VERSION
       __import__(mlabraw_name)
       mlabraw = sys.modules[mlabraw_name]
 
