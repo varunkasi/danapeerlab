@@ -1,0 +1,11 @@
+prefix=/opt/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: Pango Cairo
+Description: Cairo rendering support for Pango
+Version: 1.24.5
+Requires: pango cairo  pangoft2
+Libs: -L${libdir} -lpangocairo-1.0
+Cflags: -I${includedir}/pango-1.0
