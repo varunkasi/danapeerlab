@@ -1,0 +1,11 @@
+prefix=/opt/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: Pango X
+Description: X Window System font support for Pango
+Version: 1.24.5
+Requires: pango
+Libs: -L${libdir} -lpangox-1.0  -L/opt/local/lib -R/opt/local/lib -lX11 
+Cflags: -I${includedir}/pango-1.0  -I/opt/local/include
