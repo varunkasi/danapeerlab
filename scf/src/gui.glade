@@ -4,8 +4,8 @@
   <!-- interface-naming-policy project-wide -->
   <object class="GtkWindow" id="window">
     <property name="title" translatable="yes">Editor</property>
-    <property name="default_width">640</property>
-    <property name="default_height">500</property>
+    <property name="default_width">1027</property>
+    <property name="default_height">768</property>
     <signal name="destroy" handler="on_window_destroy"/>
     <child>
       <object class="GtkVBox" id="vbox1">
