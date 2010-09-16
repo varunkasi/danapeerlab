@@ -4,25 +4,58 @@ import os
 sys.path.insert(0, '../settings')
 import settings
 
+def set_python_path():
+  if sys.platform == 'win32':
+    py_dir = os.path.join(settings.SCF_DIR, 'depends', 'win', 'py')
+  elif sys.platform =='darwin':
+    py_dir = os.path.join(settings.SCF_DIR, 'depends', 'osx', 'py')
+  else:
+    raise Exception('Unsupported platform')
+  if not sys.path or not py_dir == sys.path[0]:
+    sys.path.insert(0, py_dir)
+
+symlinks = []
+def add_symlink(head, tail):
+  source = os.path.join(head,tail)
+  if not os.path.exists(tail):
+    os.symlink(source, tail)
+    global symlinks
+    symlinks.append(tail)
+
+def set_env_vars():
+  if sys.platform == 'win32':
+    dll_dir = os.path.join(settings.SCF_DIR, 'depends', 'win', 'dll')
+    gtk_dir = os.path.join(dll_dir, 'gtk', 'bin')
+    libxml_dir = os.path.join(dll_dir, 'libxml2-2.7.6.win32', 'bin')
+    sourceview_dir = os.path.join(dll_dir, 'gtksourceview', 'bin')
+    matlab_dll_dir = os.path.join(settings.MATLAB_PATH, 'bin', 'win32')
+    old_path = os.getenv('PATH')
+    new_path = ';'.join([settings.PYTHON_26_DIR, gtk_dir, libxml_dir, sourceview_dir, matlab_dll_dir]) + ';'
+    if not new_path in old_path:
+      os.environ['PATH'] =  new_path + old_path
+      print 'PATH is now: %s' % os.getenv('PATH')
+  if sys.platform == 'darwin':
+    # We are trying hard not to set DYLD_LIBRARY_PATH. 
+    matlab_dylib_dir = os.path.join(settings.MATLAB_PATH, 'bin', 'maci64')
+    # fix for MATLAB 2010:
+    add_symlink(matlab_dylib_dir, 'libtbb.dylib')
+    add_symlink(matlab_dylib_dir, 'libtbbmalloc.dylib')
+    
+    #lib_dir = os.path.join(settings.SCF_DIR, 'depends', 'osx', 'lib')
+    #old_path = os.getenv('DYLD_LIBRARY_PATH') or ''
+    #new_path = ':'.join([matlab_dylib_dir])
+    #if not new_path in old_path:
+    #  os.environ['DYLD_LIBRARY_PATH'] = old_path + ":" +  new_path
+    #print 'DYLD_LIBRARY_PATH is now: %s' % os.getenv('DYLD_LIBRARY_PATH')
+      
 def fix_path():
-  # Todo: add mac support here
-  dll_dir = os.path.join(settings.SCF_DIR, 'depends', 'win', 'dll')
-  gtk_dir = os.path.join(dll_dir, 'gtk', 'bin')
-  libxml_dir = os.path.join(dll_dir, 'libxml2-2.7.6.win32', 'bin')
-  sourceview_dir = os.path.join(dll_dir, 'gtksourceview', 'bin')
-  matlab_dll_dir = os.path.join(settings.MATLAB_PATH, 'bin', 'win32')
-
-  py_dir = os.path.join(settings.SCF_DIR, 'depends', 'win', 'py')
-
-  old_path = os.getenv('PATH')
-  new_path = ';'.join([settings.PYTHON_26_DIR, gtk_dir, libxml_dir, sourceview_dir, matlab_dll_dir]) + ';'
-  if not new_path in old_path:
-     os.environ['PATH'] =  new_path + old_path
-     print 'PATH is now: %s' % os.getenv('PATH')
-  sys.path.insert(0, py_dir )
-
+  set_env_vars()
+  set_python_path()
+    
 if __name__ == '__main__':
   fix_path()
-  print 'PATH is now: %s' % os.getenv('PATH')
   print 'Creating sub shell'
-  os.system('cmd')
+  if sys.platform == 'win32':
+    os.system('cmd')
+  if sys.platform == 'darwin':
+    os.system('sh')
