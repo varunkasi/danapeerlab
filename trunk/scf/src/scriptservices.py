@@ -130,7 +130,7 @@ class ScriptServices(object):
     self.control_box_manager.add_widget(title, widget)
     
   def on_canvas_draw(self, event):
-    print 'hi draw event'
+    print 'on_canvas_draw called'
     import matplotlib.transforms as mtransforms
     def get_bbox_for_labels(labels):
       bboxes = []
