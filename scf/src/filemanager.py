@@ -42,7 +42,7 @@ class FileManager(object):
     self.save()
 
   def open(self, filename):
-    with open(filename, 'r') as src:
+    with open(filename, 'rU') as src:
       lines = src.read()
     self._set_current_file(filename)
     self.script.clear(self)

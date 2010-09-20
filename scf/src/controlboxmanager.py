@@ -42,6 +42,7 @@ class ControlBoxManager(object):
         xoptions=gtk.FILL|gtk.EXPAND, yoptions=0, xpadding=5, ypadding=5)
     self.table.attach(widget_align, 1, 2, n_rows-1, n_rows,
         xoptions=gtk.FILL|gtk.EXPAND, yoptions=0, xpadding=5, ypadding=5)
+    self.table.show_all()
     self.widgets.append(widget_align)
     self.widgets.append(label_align)
 

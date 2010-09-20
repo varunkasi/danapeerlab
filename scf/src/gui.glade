@@ -5,8 +5,8 @@
   <object class="GtkWindow" id="window">
     <property name="title" translatable="yes">Editor</property>
     <property name="window_position">center</property>
-    <property name="default_width">1027</property>
-    <property name="default_height">768</property>
+    <property name="default_width">700</property>
+    <property name="default_height">700</property>
     <signal name="destroy" handler="on_window_destroy"/>
     <child>
       <object class="GtkVBox" id="vbox1">
@@ -208,6 +208,7 @@
             <property name="can_focus">True</property>
             <child>
               <object class="GtkNotebook" id="left_notebook">
+				<property name="width_request">300</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <child>
@@ -247,7 +248,7 @@
                     <property name="shadow_type">none</property>
                     <child>
                       <object class="GtkNotebook" id="main_notebook">
-                        <property name="height_request">600</property>
+                        <property name="height_request">300</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>

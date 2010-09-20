@@ -89,11 +89,14 @@ class Gui(object):
     
     scrolled_win_control_box.add_with_viewport(table_control)
     self.left_notebook.append_page(scrolled_win_control_box, gtk.Label('Controls'))
+    self.left_notebook.show_all()
     
     self.control_box_manager = ControlBoxManager(table_control)
     self.control_box_manager.add_widget('yo1aaaaaaaaaaaaaaaaaaaaaaaaa11', gtk.Button(label='asdaf'))
     self.control_box_manager.add_widget('yo22', gtk.Button(label='asdfa  sdf'))
     self.control_box_manager.add_widget('yo33333', gtk.Button(label='asdfasdasdasdf'))
+    
+    self.left_notebook.set_current_page(1)
   
     self.script = Script()
     self.script.text_inserted += self.on_script_text_inserted
@@ -139,8 +142,9 @@ class Gui(object):
     self._updateWindowTitle()
 
   def template_menu_activate(self, menu_item, template_name, template_path):
-     with open(template_path) as f:
+     with open(template_path, 'rU') as f:
        template = f.read()
+     print template
      self.on_imagemenuitem_new_activate(None)
      self.script.insert_text(0, template, None)
      

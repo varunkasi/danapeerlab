@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 import logging
 import sys
 from StringIO import StringIO
@@ -11,8 +11,8 @@ from numpy import array
 import biology.markers
 from biology.markers import Markers
 from biology.markers import marker_from_name
-from biology.kdtree import KDTree
-from biology.kdtree import Rectangle
+#from biology.kdtree import KDTree
+#from biology.kdtree import Rectangle
 from scriptservices import services
 from biology.markers import normalize_markers
 from autoreloader import AutoReloader
