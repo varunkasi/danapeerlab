@@ -7,8 +7,8 @@ import settings
 def set_python_path():
   if sys.platform == 'win32':
     py_dir = os.path.join(settings.SCF_DIR, 'depends', 'win', 'py')
-  elif sys.platform =='darwin':
-    py_dir = os.path.join(settings.SCF_DIR, 'depends', 'osx', 'py')
+  elif sys.platform =='darwin': # TODO(add 32 bit versions/ raise excpetion)
+    py_dir = os.path.join(settings.SCF_DIR, 'depends', 'osx', 'x86_64', 'py')
   else:
     raise Exception('Unsupported platform')
   if not sys.path or not py_dir == sys.path[0]:

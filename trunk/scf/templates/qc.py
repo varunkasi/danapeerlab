@@ -1,8 +1,5 @@
-import controls
-reload(controls)
-
 t = load_data_table(
-    controls.file_control(r'C:\Projects\scf\files\newer\CyTOF54_Tube29_Day2_Dasatinib+Flt3L_curated.fcs_eventnum_Ungated_Dasatinib+Flt3L_Day2_normalized_29_Dasatinib+Flt3L_Singlets.fcs'))
+    controls.file_control(None))
 t2 = t.windowed_medians('EventNum', 100, 50)
 
 s_1,s_2,s_3,s_4 = four_spaces()
