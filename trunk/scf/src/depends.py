@@ -2,8 +2,18 @@
 import sys
 import os
 sys.path.insert(0, '../settings')
-import settings
+try:
+  import settings
+except ImportError:
+  print 'Can\'t start, settings file is missing.\nPlease edit scf/settings/_settings.py and save it as settings.py'
+  sys.exit()
 
+try:
+  import gtksourceview2
+except ImportError:
+  print 'Can\'t start: gtksourceview2 is missing. Make sure you extracted the dependency archives in the right place.'
+  sys.exit()
+  
 def set_python_path():
   if sys.platform == 'win32':
     py_dir = os.path.join(settings.SCF_DIR, 'depends', 'win', 'py')
