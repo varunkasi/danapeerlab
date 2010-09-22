@@ -92,9 +92,7 @@ class Gui(object):
     self.left_notebook.show_all()
     
     self.control_box_manager = ControlBoxManager(table_control)
-    self.control_box_manager.add_widget('yo1aaaaaaaaaaaaaaaaaaaaaaaaa11', gtk.Button(label='asdaf'))
-    self.control_box_manager.add_widget('yo22', gtk.Button(label='asdfa  sdf'))
-    self.control_box_manager.add_widget('yo33333', gtk.Button(label='asdfasdasdasdf'))
+    self.control_box_manager.add_widget('Use File->New from template to start a new project.', gtk.Label())
     
     self.left_notebook.set_current_page(1)
   
@@ -147,6 +145,7 @@ class Gui(object):
      print template
      self.on_imagemenuitem_new_activate(None)
      self.script.insert_text(0, template, None)
+     self.on_toolbutton_run_clicked(None)
      
   def create_templates_menu(self):
     current_filename = os.path.realpath(__file__)
@@ -161,7 +160,6 @@ class Gui(object):
       item = gtk.MenuItem(label = t[0])
       item.show()
       item.connect('activate', self.template_menu_activate, t[0], t_path)
-      print 'dfasasdasdfasdfasdfasdfasdfyo'
       templates_menu.append(item)
     return templates_menu
   
