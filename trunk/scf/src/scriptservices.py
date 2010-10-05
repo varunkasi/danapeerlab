@@ -128,7 +128,7 @@ class ScriptServices(object):
     
   def add_widget_in_control_box(self, title, widget):
     self.control_box_manager.add_widget(title, widget)
-    
+
   def on_canvas_draw(self, event):
     print 'on_canvas_draw called'
     import matplotlib.transforms as mtransforms
@@ -148,24 +148,24 @@ class ScriptServices(object):
     fig = event.canvas.figure
     # assume only one axes.
     ax = fig.get_axes()[0]
-       
-    ylabels = ax.yaxis.get_ticklabels()   
-    bbox = get_bbox_for_labels(ylabels)   
+
+    ylabels = ax.yaxis.get_ticklabels()
+    bbox = get_bbox_for_labels(ylabels)
     for l in ylabels:
       #new_size = l.get_size() * (0.1 / bbox.width)
-      #new_size = min(new_size, 8)     
+      #new_size = min(new_size, 8)
       l.set_size(8)
-    
-    xlabels = ax.xaxis.get_ticklabels()   
-    bbox = get_bbox_for_labels(xlabels)       
+
+    xlabels = ax.xaxis.get_ticklabels()
+    bbox = get_bbox_for_labels(xlabels)
     for l in xlabels:
       #new_size = l.get_size() * (0.1 / bbox.height)
       #new_size = min(new_size, 8)
       l.set_size(8)
-      
-    box_y = get_bbox_for_labels(ylabels)   
+
+    box_y = get_bbox_for_labels(ylabels)
     box_x = get_bbox_for_labels(xlabels)
-    left = 0.1
+    left = 0.12
     right = 0.9
     top = 0.9
     bottom = 0.1

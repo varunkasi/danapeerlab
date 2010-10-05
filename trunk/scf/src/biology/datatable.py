@@ -74,6 +74,8 @@ class DataTable(AutoReloader):
     return data.table
     
   def windowed_medians(self, progression_dim, window_size=1000, overlap=500):
+    window_size = int(window_size)
+    overlap = int(overlap)
     def cache(data):
       # first sort by the given dim:
       xdim_index = self.dims.index(progression_dim)

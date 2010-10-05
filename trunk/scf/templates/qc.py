@@ -1,6 +1,12 @@
-t = load_data_table(
-    controls.file_control(None))
-t2 = t.windowed_medians('EventNum', 100, 50)
+controls.text_control("""Shows 4 markers in relation to event number.
+Each point in the graph is the median of a sliding window.""")
+
+file_name = controls.file_control(None)
+window_size = controls.slider_control(100, 100, 5000, 'Window Size')
+overlap = controls.slider_control(50, 0, 5000, 'Window Overlap')
+
+t = load_data_table(file_name)
+t2 = t.windowed_medians('EventNum', window_size, overlap)
 
 s_1,s_2,s_3,s_4 = four_spaces()
 

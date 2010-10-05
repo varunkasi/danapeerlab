@@ -23,7 +23,9 @@ from scriptservices import ScriptServices
 from scriptservices import services
 #from gtkcodebuffer import CodeBuffer
 #from gtkcodebuffer import SyntaxLoader
- 
+
+
+
 class Gui(object):
   def __init__(self):
     builder = gtk.Builder()
@@ -70,7 +72,7 @@ class Gui(object):
     if font_desc:
         self.source_view.modify_font(font_desc)
     #self.source_view = gtk.TextView(self.textbuffer_script)
-    self.source_view.set_size_request(400, -1)
+    self.source_view.set_size_request(500, -1)
     
     
     scrolled_win = gtk.ScrolledWindow()
@@ -81,18 +83,11 @@ class Gui(object):
     
     scrolled_win_control_box = gtk.ScrolledWindow()
     scrolled_win_control_box.show()
-    vbox_control = gtk.VBox()
-    vbox_control.show()
-    
-    table_control = gtk.Table(1,1)
-    table_control.show()
-    
-    scrolled_win_control_box.add_with_viewport(table_control)
     self.left_notebook.append_page(scrolled_win_control_box, gtk.Label('Controls'))
     self.left_notebook.show_all()
     
-    self.control_box_manager = ControlBoxManager(table_control)
-    self.control_box_manager.add_widget('Use File->New from template to start a new project.', gtk.Label())
+    self.control_box_manager = ControlBoxManager(scrolled_win_control_box)
+    self.control_box_manager.add_widget('Welcome! Use File->New from template to start a new project.', gtk.Label())
     
     self.left_notebook.set_current_page(1)
   
@@ -143,16 +138,19 @@ class Gui(object):
      with open(template_path, 'rU') as f:
        template = f.read()
      print template
-     self.on_imagemenuitem_new_activate(None)
-     self.script.insert_text(0, template, None)
-     self.on_toolbutton_run_clicked(None)
+     if self.on_imagemenuitem_new_activate(None):
+       self.script.insert_text(0, template, None)
+       self.on_toolbutton_run_clicked(None)
      
   def create_templates_menu(self):
     current_filename = os.path.realpath(__file__)
     templates_path = os.path.dirname(current_filename) + '/../templates'
     templates_path = os.path.realpath(templates_path)
     templates = [
-        ('Quality Control', 'qc.py')]
+        ('Progress over event number', 'qc.py'),
+        ('Gate and switch dimensions', 'gate_switch.py'),
+        ('PCA components', 'pca.py'),
+        ('Histograms', 'hists.py')]
     templates_menu = gtk.Menu()
     templates_menu.show()
     for t in templates:
@@ -263,8 +261,9 @@ class Gui(object):
     
   def on_imagemenuitem_new_activate(self, menuitem):
     if self.file_manager.need_save and not self._show_save_changes_dialog():
-      return
+      return False
     self.file_manager.new()
+    return True
 
   def on_imagemenuitem_open_activate(self, menuitem):
     if self.file_manager.need_save and not self._show_save_changes_dialog():

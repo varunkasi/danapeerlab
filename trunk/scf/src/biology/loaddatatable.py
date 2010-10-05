@@ -56,10 +56,10 @@ def fcsextract(filename):
         data_end = int(fcs_vars['$DATAEND'])
 
     num_dims = int(fcs_vars['$PAR'])
-    logging.info("Number of dimensions:%d" % num_dims)
+    #logging.info("Number of dimensions:%d" % num_dims)
 
     num_events = int(fcs_vars['$TOT'])
-    logging.info("Number of events:%d" % num_events)
+    #logging.info("Number of events:%d" % num_events)
 
     # Read DATA portion
     fcs.seek(data_start)
@@ -70,10 +70,10 @@ def fcsextract(filename):
   datatype = fcs_vars['$DATATYPE']
   if datatype == 'F':
       datatype = 'f' # set proper data mode for struct module
-      logging.info("Data stored as single-precision (32-bit) floating point numbers")
+      #logging.info("Data stored as single-precision (32-bit) floating point numbers")
   elif datatype == 'D':
       datatype = 'd' # set proper data mode for struct module
-      logging.info("Data stored as double-precision (64-bit) floating point numbers")
+      #logging.info("Data stored as double-precision (64-bit) floating point numbers")
   else:
       assert False,"Error: Unrecognized $DATATYPE '%s'" % datatype
   
@@ -107,6 +107,8 @@ def fcsextract(filename):
 load_data_table_CACHE = {}
 def load_data_table(filename):
   global load_data_table_CACHE
+  if not filename:
+    raise Exception('No filename was provided to load_data_table')
   if not filename in load_data_table_CACHE:
     fcs_vars, events = fcsextract(filename)
     if not events:
