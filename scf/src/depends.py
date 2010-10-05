@@ -14,6 +14,28 @@ except ImportError:
   print 'Can\'t start: gtksourceview2 is missing. Make sure you extracted the dependency archives in the right place.'
   sys.exit()
   
+def set_matlab_path():
+  def add_path(path):
+    from mlabwrap import mlab
+    path_str = mlab.path(nout=1)
+    paths = path_str.split(';')
+    for p in paths: print p
+    if not path in paths:
+      mlab.path(path_str, path)
+
+  matlab_path = os.path.join(settings.SCF_DIR, 'depends', 'matlab')
+  isomap_path = os.path.join(matlab_path, 'isomap')
+  dr_path = os.path.join(matlab_path, 'drtoolbox')
+  dr_tech_path = os.path.join(dr_path, 'techniques')
+  dr_gui_path = os.path.join(dr_path, 'gui')
+  add_path(matlab_path)
+  add_path(isomap_path)
+  add_path(dr_path)
+  add_path(dr_tech_path)
+  add_path(dr_gui_path)
+    
+  
+  
 def set_python_path():
   if sys.platform == 'win32':
     py_dir = os.path.join(settings.SCF_DIR, 'depends', 'win', 'py')
@@ -61,6 +83,8 @@ def set_env_vars():
 def fix_path():
   set_env_vars()
   set_python_path()
+  print 'Loading matlab...'
+  set_matlab_path()
     
 if __name__ == '__main__':
   fix_path()

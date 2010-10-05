@@ -52,6 +52,7 @@ def file_control(filename, title='Filename'):
           changer.set_parameter(0, repr(new_file))
           services.replay_script()
     data.button = gtk.Button(label=filename)
+    data.button.set_size_request(250,-1)
     data.button.connect('clicked', button_click, services.get_current_changer())
     services.add_widget_in_control_box(title, data.button)
   data = services.cache(title, cache, False, False)
@@ -62,20 +63,57 @@ def file_control(filename, title='Filename'):
     #raise Exception('Missing filename')
   return filename
 
-@register_changer
-def slider_control(val, min_val, max_val, title='Filename'):
+
+  
+def text_control(text, title='Description'):
   def cache(data):
-    def button_click(self, button, changer):
-        new_file = file_dialog(title)
-        changer.set_parameter(0, repr(new_file))
-        services.replay_script()
-    data.button = gtk.Button(label=filename)
-    data.button.connect('clicked', button_click, get_current_changer())
-    services.add_widget_in_control_box(title, data.button)
+    data.text_label = gtk.Label(text)
+    #data.text_label.set_size_request(250,-1)
+    data.text_label.set_line_wrap(True)
+    services.add_widget_in_control_box(title, data.text_label)
+  data = services.cache(None, cache, False, False)
+  data.text_label.set_label(text)
+  return text
+
+#@register_changer
+#def multi_picker_control
+
+@register_changer
+def slider_control(val, min_val, max_val, title='Number'):
+  def cache(data):
+    def button_release(range, event, changer):
+      changer.set_parameter(0, range.get_value())
+      services.replay_script()
+    data.slider = gtk.HScale()
+    data.slider.set_value_pos(gtk.POS_LEFT)
+    data.slider.set_range(min_val, max_val)
+    data.slider.connect(
+        'button-release-event', button_release, services.get_current_changer())
+    #data.slider.set_size_request(150,-1)
+    services.add_widget_in_control_box(title, data.slider)
   data = services.cache(title, cache, False, False)
-  data.button.set_label(filename)
+  data.slider.set_value(val)  
+  return val
   
-  
+@register_changer
+def picker_control(choice, options, title='Choice'):
+  def cache(data):
+    def changed(combobox, changer):
+      changer.set_parameter(0, repr(combobox.get_active_text()))
+      services.replay_script()
+    data.box = gtk.combo_box_new_text() 
+    for option in options:
+      data.box.append_text(option)
+    data.box.connect(
+        'changed', changed, services.get_current_changer())
+    #data.slider.set_size_request(150,-1)
+    services.add_widget_in_control_box(title, data.box)
+  data = services.cache(title, cache, False, False)
+  if choice in options:
+    data.box.set_active(options.index(choice))
+  return choice
+
+
 def spaces_ml(rows_per_page, cols_per_page, how_many, name='data'):
   Space(name, rows_per_page, cols_per_page)
   spaces = []
@@ -114,7 +152,7 @@ def fix_axis():
   
 
 class Gater(object):
-  def __init__(self, ax, all_markers, rect_range, color_label, only_x=False):
+  def __init__(self, ax, all_markers, rect_range, color_label, only_x=False, no_selection=False):
     self.all_markers = all_markers
     self.ax = ax
     self.color_label = color_label
@@ -122,7 +160,9 @@ class Gater(object):
     self.press = None
     self.ignore_next_on_press = False
     self.only_x = only_x
-    self.renew_rect(rect_range)
+    self.no_selection = no_selection
+    if not self.no_selection:
+      self.renew_rect(rect_range)
     self.connect()
     global services
     self.changer = services.get_current_changer()
@@ -152,13 +192,13 @@ class Gater(object):
       
   def connect(self):
     'connect to all the events we need'
-    self.cidpress = self.rect.figure.canvas.mpl_connect(
+    self.cidpress = self.ax.figure.canvas.mpl_connect(
         'button_press_event', self.on_press)
-    self.cidrelease = self.rect.figure.canvas.mpl_connect(
+    self.cidrelease = self.ax.figure.canvas.mpl_connect(
         'button_release_event', self.on_release)
-    self.cidmotion = self.rect.figure.canvas.mpl_connect(
+    self.cidmotion = self.ax.figure.canvas.mpl_connect(
         'motion_notify_event', self.on_motion)        
-    self.cidpick = self.rect.figure.canvas.mpl_connect(
+    self.cidpick = self.ax.figure.canvas.mpl_connect(
         'pick_event', self.on_pick)
             
   def on_pick(self, event):
@@ -178,14 +218,14 @@ class Gater(object):
     if self.ignore_next_on_press:
       self.ignore_next_on_press = False
       #logging.info('ignored press')
-    elif event.inaxes == self.rect.axes:
+    elif self.rect and event.inaxes == self.rect.axes:
       self.rect.set_xy((event.xdata, event.ydata))
       self.rect.set_width(0)
       self.rect.set_height(0)
       self.press = event.xdata, event.ydata
       self.rect.figure.canvas.draw()
     else:
-      width, height = self.rect.figure.canvas.get_width_height()
+      width, height = self.ax.figure.canvas.get_width_height()
       logging.info('ccc' + str(width) +' ' + str(height))
       logging.info('ccdc' + str(event.x) +' ' + str(event.y))
       logging.info('ccdc' + str(event.x/ width) +' ' + str(event.y / height))
@@ -203,7 +243,8 @@ class Gater(object):
   def on_motion(self, event):
     'on motion we will move the rect if the mouse is over us'
     if self.press is None: return
-    if event.inaxes != self.rect.axes: return
+    if event.inaxes != self.ax: return
+    if self.no_selection: return
     #logging.info('motion')
     xpress, ypress = self.press
     dx = abs(event.xdata - xpress)
@@ -240,13 +281,52 @@ class Gater(object):
 
   def disconnect(self):
     'disconnect all the stored connection ids'
-    self.rect.figure.canvas.mpl_disconnect(self.cidpress)
-    self.rect.figure.canvas.mpl_disconnect(self.cidrelease)
-    self.rect.figure.canvas.mpl_disconnect(self.cidmotion)
-    self.rect.figure.canvas.mpl_disconnect(self.cidpick)
-    if self.rect in self.ax.patches:
+    self.ax.figure.canvas.mpl_disconnect(self.cidpress)
+    self.ax.figure.canvas.mpl_disconnect(self.cidrelease)
+    self.ax.figure.canvas.mpl_disconnect(self.cidmotion)
+    self.ax.figure.canvas.mpl_disconnect(self.cidpick)
+    if self.rect and self.rect in self.ax.patches:
       self.ax.patches.remove(self.rect)
 
+@register_changer
+def dim_choose(x_marker, y_marker, datatable=None):
+  ax = services.get_ax()
+  def gate_cache(data):
+    ax = services.get_ax()
+    all_markers = None
+    if datatable:
+      all_markers = datatable.dims
+    data.gater = Gater(ax, all_markers, None, None, False, True)
+  data = services.cache((ax), gate_cache, True, False)  
+  
+  ax.set_ylabel(y_marker)    
+  ax.set_xlabel(x_marker)
+  return (x_marker, y_marker)
+
+#def set_labels(x_label, y_label, color_label): \
+#  def cache(data):
+#    data.text =  ax.figure.text(0.01, 0.01, '', picker=1, size='x-small')
+#  ax.set_ylabel(x_label)    
+#  ax.set_xlabel(x_label)
+#  data.text.set_text('Color: %s' % str(color_label))
+
+@register_changer
+def dim_color_choose(x_marker, y_marker, color_marker, datatable=None):
+  ax = services.get_ax()
+  def gate_cache(data):
+    ax = services.get_ax()
+    all_markers = None
+    if datatable:
+      all_markers = datatable.dims
+    data.text =  ax.figure.text(0.01, 0.01, '', picker=1, size='x-small')
+    data.gater = Gater(ax, all_markers, None, data.text, False, True)
+  data = services.cache((ax), gate_cache, True, False)    
+  ax.set_ylabel(y_marker)    
+  ax.set_xlabel(x_marker)
+  data.text.set_text('Color: %s' % str(color_marker))
+  return (x_marker, y_marker, color_marker)
+
+ 
 @register_changer      
 def gate(x_marker, y_marker, rect, color_marker=None, datatable=None): 
   ax = services.get_ax()
@@ -255,7 +335,7 @@ def gate(x_marker, y_marker, rect, color_marker=None, datatable=None):
     all_markers = None
     if datatable:
       all_markers = datatable.dims
-    data.text =  ax.figure.text(0.01,0.01,'', picker=1, size='x-small')
+    data.text =  ax.figure.text(0.01, 0.01, '', picker=1, size='x-small')
     data.gater = Gater(ax, all_markers, rect, data.text)
   data = services.cache((ax), gate_cache, True, False)  
   ax.set_xlabel(x_marker)
@@ -407,7 +487,10 @@ def scatter(datatable, markers, range=None, color_marker=None, min_cells_per_bin
 
 def kde1d(datatable, marker, min_x=None, max_x=None):
   def cached(data):
-    points = datatable.get_cols(marker)[0]
+    if type(datatable) is np.ndarray:    
+      points = datatable
+    else:
+      points = datatable.get_cols(marker)[0]
     range = np.max(points) - np.min(points)
     min_x_ = min_x
     max_x_ = max_x
@@ -422,8 +505,10 @@ def kde1d(datatable, marker, min_x=None, max_x=None):
     data.xmesh = data.xmesh[0]
     #print 'den:' + str(np.shape(data.density[0]))
     data.density = data.density.T[0]
-    
-  data = services.cache((datatable, marker), cached, False, False)
+  if type(datatable) is np.ndarray:    
+    data = services.cache((None, marker), cached, False, False)
+  else:
+    data = services.cache((datatable, marker), cached, False, False)
   display_graph(data.xmesh, data.density)
     
   
