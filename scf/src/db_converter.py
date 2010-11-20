@@ -25,7 +25,7 @@ def cytof54_values_from_filename(filename):
   assert tags[6] == 'eventnum'
   assert tags[7] == 'Ungated'
   print tags[8]
-  assert tags[8] == vals['stim']
+  assert tags[8] == vals['  ']
   vals['normalized'] = 1
   return vals
   

@@ -64,15 +64,9 @@ def set_env_vars():
   if sys.platform == 'darwin':
     # We are trying hard not to set DYLD_LIBRARY_PATH. 
     matlab_dylib_dir = os.path.join(settings.MATLAB_PATH, 'bin', 'maci64')
-    # fix for MATLAB 2010:
-    if not os.path.exists('libtbb.dylib'):
-      add_symlink(matlab_dylib_dir, 'libtbb.dylib')
-    else:
-      print 'libtbb.dylib exists'
-    if not os.path.exists('libtbbmalloc.dylib'):
-      add_symlink(matlab_dylib_dir, 'libtbbmalloc.dylib')
-    else:
-      print 'libtbbmalloc.dylib exists'
+    # fix for MATLAB 2010:   
+    add_symlink(matlab_dylib_dir, 'libtbb.dylib')   
+    add_symlink(matlab_dylib_dir, 'libtbbmalloc.dylib')
     
     #lib_dir = os.path.join(settings.SCF_DIR, 'depends', 'osx', 'lib')
     #old_path = os.getenv('DYLD_LIBRARY_PATH') or ''
