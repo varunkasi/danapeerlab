@@ -128,7 +128,7 @@ class Gui(object):
     
     
     global services
-    services.init(self.space_manager, self.changer_manager, self.script_server, self.window.get_toplevel(), self.control_box_manager)
+    services.init(self.space_manager, self.changer_manager, self.script_server, self.window.get_toplevel(), self.control_box_manager, textview_log)
     
     
     
@@ -150,7 +150,8 @@ class Gui(object):
         ('Progress over event number', 'qc.py'),
         ('Gate and switch dimensions', 'gate_switch.py'),
         ('PCA components', 'pca.py'),
-        ('Histograms', 'hists.py')]
+        ('Histograms', 'hists.py'),
+        ('Mutual Information', 'mutual.py')]
     templates_menu = gtk.Menu()
     templates_menu.show()
     for t in templates:

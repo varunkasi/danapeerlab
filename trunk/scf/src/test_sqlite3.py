@@ -45,7 +45,7 @@ elif len(sys.argv) > 2 and sys.argv[1] == 'read':
   conn = sqlite3.connect(sys.argv[2])
   c = conn.cursor()
   with Timer('Find Values'):   
-    c.execute('select * from test where r30="A" limit 300000')   
+    c.execute('select * from test where r30="A" limit 300000')
     rows = c.fetchall()
     print rows[0]
     print len(rows)

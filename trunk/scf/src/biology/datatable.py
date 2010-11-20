@@ -88,7 +88,22 @@ class DataTable(AutoReloader):
     data = services.cache((self, progression_dim, window_size, overlap), cache, False, False)
     return data.table
   
- 
+  def log_transform(self):
+    def cache(data):
+      data_copy = np.copy(self.data)      
+      data_copy = np.log(data_copy)
+      data.table = DataTable(data_copy, self.dims)
+    data = services.cache(self, cache, False, False)
+    return data.table
+
+  def arcsinh_transform(self):
+    def cache(data):
+      data_copy = np.copy(self.data)      
+      data_copy = np.arcsinh(data_copy)
+      data.table = DataTable(data_copy, self.dims)
+    data = services.cache(self, cache, False, False)
+    return data.table
+    
   def add_reduced_dims(self, method, no_dims, dims_to_use=None, *args, **kargs):
     if not dims_to_use:
       dims_to_use = self.dims
@@ -123,7 +138,7 @@ class DataTable(AutoReloader):
     data = services.cache((self, n), random_sample_cache, False, False)
     return data.table
   
-  def get_mutual_information(self):
+  def get_mutual_information(self, ignore_negative_values=True):
     def cache(data):
       from mlabwrap import mlab
       bad_dims = self.get_markers('surface_ignore')
@@ -136,12 +151,20 @@ class DataTable(AutoReloader):
       res = np.zeros((num_dims, num_dims))
       for i in xrange(num_dims):
         for j in xrange(i):
+          logging.info('Calculating mutual information between %s and %s' % (dims_to_use[i], dims_to_use[j]))
           arr = self.get_points(dims_to_use[i], dims_to_use[j])
+          if ignore_negative_values:
+            arr = arr[np.all(arr > 0, axis=1)]
+            if arr.shape[0] < 100:
+              services.print_text('Less than 100 cells in MI calculation for (%s, %s)' % (dims_to_use[i], dims_to_use[j]), weight=700, foreground='red')
+              res[j,i] = 0
+              res[i,j] = 0
+              continue
           #print arr.shape
           res[i,j] = mlab.mutualinfo_ap(arr, nout=1)
           res[j,i] = 0
       data.res = DataTable(res, dims_to_use)
-    data = services.cache(self, cache, False, False)
+    data = services.cache((self,ignore_negative_values), cache, False, False)
     return data.res
     
   

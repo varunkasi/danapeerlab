@@ -64,8 +64,9 @@ class ScriptServices(object):
   """This is the API provided to scripts in the editor.
   Functions here can run from the script thread, or from the GUI thread.
   """
-  def init(self, space_manager, changer_manager, script_server, top_widget, control_box_manager):
+  def init(self, space_manager, changer_manager, script_server, top_widget, control_box_manager, log_textview):
     """Inits the class, should only be called by main.py"""
+    self.log_textview = log_textview
     self.control_box_manager = control_box_manager
     self._space_manager = space_manager
     self._changer_manager = changer_manager
@@ -95,6 +96,7 @@ class ScriptServices(object):
   def replay_script(self, sender=None):
     """Adds a request to run the script again when the script currently running 
     is finished"""
+    print 'yiiiiiii'   
     self._script_server.add_to_queue(
         'script %d' % self._script_request_counter,
         sender)
@@ -127,9 +129,9 @@ class ScriptServices(object):
     return self.get_widget(self.current_widget_locations[0], data_test)
     
   def add_widget_in_control_box(self, title, widget):
-    self.control_box_manager.add_widget(title, widget)
+    return self.control_box_manager.add_widget(title, widget)
 
-  def on_canvas_draw(self, event):
+  def on_canvas_draw(self, canvas):
     print 'on_canvas_draw called'
     import matplotlib.transforms as mtransforms
     def get_bbox_for_labels(labels):
@@ -145,7 +147,7 @@ class ScriptServices(object):
       bbox = mtransforms.Bbox.union(bboxes)
       return bbox
 
-    fig = event.canvas.figure
+    fig = canvas.figure
     # assume only one axes.
     ax = fig.get_axes()[0]
 
@@ -194,13 +196,14 @@ class ScriptServices(object):
     else:
       widget = self.get_widget_in_current_location(self)
     if not widget or not widget.get_data('ax'):
-      logging.debug('creating ax')
+      #logging.debug('creating ax')
       widget = gtk.Frame()
       fig = Figure(dpi=100)
       ax = fig.add_subplot(111)
       ax.set_aspect('auto')
       canvas = FigureCanvas(fig)
-      canvas.mpl_connect('draw_event', self.on_canvas_draw)
+      self.on_canvas_draw(canvas)
+      #canvas.mpl_connect('draw_event', self.on_canvas_draw)
       canvas.show()
       widget.add(canvas)
       if custom_location:
@@ -228,9 +231,23 @@ class ScriptServices(object):
   def get_top_widget(self):
       return self.top_widget
 
-  def cache(self, key, new_func, cache_location=True, use_widget=True):
+  def print_text(self, text, *args, **kargs):
+    buffer = self.log_textview.get_buffer()
+    buffer.insert_with_tags(
+        buffer.get_end_iter(), text, buffer.create_tag(*args, **kargs))
+    buffer.insert(buffer.get_end_iter(), '\n')
+    textmark = buffer.create_mark(None, buffer.get_end_iter())
+    self.log_textview.scroll_to_mark(textmark, 0.0)
+    buffer.delete_mark(textmark)
+
+      
+  def cache(self, key, new_func, cache_location=True, cache_changer=False):
     if cache_location:
       key = (key, self.current_widget_locations[0])
+    if cache_changer:
+      changer = self.get_current_changer()
+      if changer:
+        key = (key, changer.regions)
     key = (key, inspect.stack()[1][3])
     key = self.make_hashable(key)
     #logging.info(key)
@@ -240,8 +257,6 @@ class ScriptServices(object):
       data = AttrDict()
       new_func(data)      
       self._cache[key] = data
-      if use_widget:
-        self.add_widget_in_current_location(data.widget)
     return self._cache[key]
   
   def make_hashable(self, x):

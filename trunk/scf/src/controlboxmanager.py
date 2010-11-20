@@ -93,6 +93,7 @@ class ControlBoxManager(object):
     self.widgets.append(label)
     self.widgets.append(widget_align)
     #self.widgets.append(widget)
+    return label
 
   def clear_table(self):
     for w in self.widgets:

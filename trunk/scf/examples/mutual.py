@@ -3,14 +3,16 @@ reload(biology.datatable)
 import controls
 reload(controls)
 
-s = controls.spaces(1)
-filename = choose_file(
-  r'C:\Projects\scf\files\newer\CyTOF54_Tube01_Day1_Unstim1_curated.fcs_eventnum_Ungated_Jnstim1_Day1_normalized_1_Unstim1_Singlets.fcs')
-
+#s = controls.spaces(2 )
+filename = controls.file_control('C:\\Projects\\svn\\danapeerlab\\scf\\1.fcs')
 t = load_data_table(filename)
-t = t.random_sample(50000)
-t2 = t.get_mutual_information()
-#t2.data = np.random.rand(*t2.data.shape)
+t_sampled = t.random_sample(5)
+t2 = t_sampled.get_mutual_information()
 
-with s[0]:
-  controls.color_table(t2)
+Space('data', 10, 10)
+
+with Space('data', 0, 0, 6, 10):
+  dim1, dim2 = controls.color_table(t2, '146-CD8', '170-CD90')
+
+with Space('data', 6, 0, 10, 10):
+  controls.kde2d(t2, [dim1, dim2], None)

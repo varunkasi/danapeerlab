@@ -54,8 +54,9 @@ def file_control(filename, title='Filename'):
     data.button = gtk.Button(label=filename)
     data.button.set_size_request(250,-1)
     data.button.connect('clicked', button_click, services.get_current_changer())
-    services.add_widget_in_control_box(title, data.button)
-  data = services.cache(title, cache, False, False)
+    data.title_label = services.add_widget_in_control_box(title, data.button)
+  data = services.cache(None, cache, False, True)
+  data.title_label.set_markup('<b>%s</b>' % title)
   if filename:
     data.button.set_label(filename)
   else:
@@ -64,14 +65,16 @@ def file_control(filename, title='Filename'):
   return filename
 
 
-  
+@register_changer
 def text_control(text, title='Description'):
   def cache(data):
     data.text_label = gtk.Label(text)
-    #data.text_label.set_size_request(250,-1)
+    data.text_label.set_alignment(0, 0)
+    data.text_label.set_size_request(250,-1)
     data.text_label.set_line_wrap(True)
-    services.add_widget_in_control_box(title, data.text_label)
-  data = services.cache(None, cache, False, False)
+    data.title_label = services.add_widget_in_control_box(title, data.text_label)
+  data = services.cache(None, cache, False, True)
+  data.title_label.set_markup('<b>%s</b>' % title)
   data.text_label.set_label(text)
   return text
 
@@ -90,8 +93,9 @@ def slider_control(val, min_val, max_val, title='Number'):
     data.slider.connect(
         'button-release-event', button_release, services.get_current_changer())
     #data.slider.set_size_request(150,-1)
-    services.add_widget_in_control_box(title, data.slider)
-  data = services.cache(title, cache, False, False)
+    data.title_label = services.add_widget_in_control_box(title, data.slider)
+  data = services.cache(None, cache, False, True)
+  data.title_label.set_markup('<b>%s</b>' % title)
   data.slider.set_value(val)  
   return val
   
@@ -104,13 +108,16 @@ def picker_control(choice, options, title='Choice'):
     data.box = gtk.combo_box_new_text() 
     for option in options:
       data.box.append_text(option)
-    data.box.connect(
+    data.handler_id = data.box.connect(
         'changed', changed, services.get_current_changer())
     #data.slider.set_size_request(150,-1)
-    services.add_widget_in_control_box(title, data.box)
-  data = services.cache(title, cache, False, False)
+    data.title_label = services.add_widget_in_control_box(title, data.box)
+  data = services.cache(None, cache, False, True)
+  data.title_label.set_markup('<b>%s</b>' % title)
   if choice in options:
+    data.box.handler_block(data.handler_id)
     data.box.set_active(options.index(choice))
+    data.box.handler_unblock(data.handler_id)
   return choice
 
 
@@ -226,9 +233,9 @@ class Gater(object):
       self.rect.figure.canvas.draw()
     else:
       width, height = self.ax.figure.canvas.get_width_height()
-      logging.info('ccc' + str(width) +' ' + str(height))
-      logging.info('ccdc' + str(event.x) +' ' + str(event.y))
-      logging.info('ccdc' + str(event.x/ width) +' ' + str(event.y / height))
+      #logging.info('ccc' + str(width) +' ' + str(height))
+      #logging.info('ccdc' + str(event.x) +' ' + str(event.y))
+      #logging.info('ccdc' + str(event.x/ width) +' ' + str(event.y / height))
       is_x = event.y/height < 0.2 and event.x/width > 0.2
       is_y = event.y/height > 0.2 and event.x/width < 0.2
       if is_x or (not self.only_x and is_y):
@@ -385,14 +392,15 @@ class Picker(object):
     self.dims = dims
  
   def on_release(self, event):
-    #logging.info('x:%s, y:%s' % (np.round(event.xdata), np.round(event.ydata)))
+    #logging.info('x:%s, y:%s' % (event.xdata, event.ydata))
+    #logging.info('x:%s, y:%s' % (np.round(event.xdata), np.round(event.ydata)))    
     dim_x = self.dims[int(np.round(event.xdata))]
     dim_y = self.dims[int(np.round(event.ydata))]
     self.changer.set_parameter(1, repr(dim_x))
     self.changer.set_parameter(2, repr(dim_y))
     services.replay_script(self)     
 
-@register_changer    
+@register_changer
 def color_table(datatable, dim_x=None, dim_y=None):
   def cache(data):
     ax = services.get_ax()
@@ -401,7 +409,7 @@ def color_table(datatable, dim_x=None, dim_y=None):
   services.cache(ax, cache, True, False)
   #print dim_x
   #print dim_y
-  display_matrix(datatable.data)
+  display_matrix(datatable.data, cmap=cm.jet)
   ax.set_xticks(np.arange(len(datatable.dims)))
   ax.set_yticks(np.arange(-1, len(datatable.dims)+1))
   ax.set_xticklabels(datatable.dims)
@@ -506,9 +514,9 @@ def kde1d(datatable, marker, min_x=None, max_x=None):
     #print 'den:' + str(np.shape(data.density[0]))
     data.density = data.density.T[0]
   if type(datatable) is np.ndarray:    
-    data = services.cache((None, marker), cached, False, False)
+    data = services.cache((None, marker, min_x, max_x), cached, False, False)
   else:
-    data = services.cache((datatable, marker), cached, False, False)
+    data = services.cache((datatable, marker, min_x, max_x), cached, False, False)
   display_graph(data.xmesh, data.density)
     
   
@@ -529,7 +537,7 @@ def kde2d(datatable, markers, range, title=None, *args, **kargs):
       min_a = min(a)
       max_a = max(a)
     points = datatable.get_points(markers[0], markers[1])
-    bandwidth,density,X,Y = mlab.kde2d(
+    bandwidth,data.density, data.X, data.Y = mlab.kde2d(
         points, 256,        
         [[min_a, min_w]],
         [[max_a, max_w]],
@@ -541,32 +549,33 @@ def kde2d(datatable, markers, range, title=None, *args, **kargs):
 #    if Y[0,0] > Y[-1,0]:  
 #      Y = Y[::-1,:]
 #      density = density[:,::-1]  
-    if title:
-      data.ax.set_title(title)
-    ax.set_xlabel(str(markers[0]) + '   ')
-    ax.set_ylabel(str(markers[1]) + '   ')
-    display_image(
-        density,
-        origin='lower', 
-        extent=[
-            X[0,0],
-            X[0,-1],
-            Y[0,0],
-            Y[-1,0]],
-        interpolation=None, *args, **kargs)
   data = services.cache((datatable, markers, range, args, kargs), cached, True, False)  
+  if title:
+    data.ax.set_title(title)
+  ax.set_xlabel(str(markers[0]) + '   ')
+  ax.set_ylabel(str(markers[1]) + '   ')
+  display_image(
+    data.density,
+    origin='lower', 
+    extent=[
+        data.X[0,0],
+        data.X[0,-1],
+        data.Y[0,0],
+        data.Y[-1,0]],
+        interpolation=None, *args, **kargs)
   ax.figure.canvas.draw()
   
     
 def display_text(text):
   def create_data(data):
     data.widget = gtk.Label()
+    services.add_widget_in_current_location(data.widget)
   data = services.cache(None, create_data, True, True)
   gobject.idle_add(data.widget.set_text, text)
 
 def display_image(Z, extent, *args, **kargs):
   def create_data(data):
-    logging.info('yoooo')
+    #logging.info('yoooo')
     data.ax = services.get_ax()
     #from matplotlib.colors import LightSource
     #ls = LightSource(azdeg=0,altdeg=65)
