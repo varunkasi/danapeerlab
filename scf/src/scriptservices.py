@@ -66,6 +66,7 @@ class ScriptServices(object):
   """
   def init(self, space_manager, changer_manager, script_server, top_widget, control_box_manager, log_textview):
     """Inits the class, should only be called by main.py"""
+    self.last_folder = None
     self.log_textview = log_textview
     self.control_box_manager = control_box_manager
     self._space_manager = space_manager
@@ -241,10 +242,10 @@ class ScriptServices(object):
     buffer.delete_mark(textmark)
 
       
-  def cache(self, key, new_func, cache_location=True, cache_changer=False):
-    if cache_location:
+  def cache(self, key, new_func, cache_widget_location=True, cache_code_location=False):
+    if cache_widget_location:
       key = (key, self.current_widget_locations[0])
-    if cache_changer:
+    if cache_code_location:
       changer = self.get_current_changer()
       if changer:
         key = (key, changer.regions)

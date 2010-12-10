@@ -4,11 +4,11 @@ import re
 import logging
 from collections import namedtuple
 
-"""A list of function names which will be annonated. If you call 
+"""Keys are function names which will be annonated. If you call 
 ParameterChangerManager.get_current_changer from any of these function you will 
 get a ParameterChanger that can change the parameters of the function in the 
-current script"""
-PARAMETER_CHANGER_FUNCTIONS = []
+current script. Values are mappings between strings to parameter number in the function."""
+PARAMETER_CHANGER_FUNCTIONS = {}
 
 class ParameterChangerManager:
   def __init__(self, script):
@@ -21,12 +21,16 @@ class ParameterChangerManager:
     self.current_changer = -1
     self.name_to_annonate = []    
   
-  def _create_changer_from_pos(self, pos):
+  def _create_changer_from_pos(self, pos, function_name):
     """This function creates a new parameter changer assuming pos is an 
     offset to a function name in a script. 
     
     The function also adds the needed marks for the changer in the script.
     """
+    global PARAMETER_CHANGER_FUNCTIONS
+    name_to_param_mapping = PARAMETER_CHANGER_FUNCTIONS[function_name]
+    print function_name
+    print PARAMETER_CHANGER_FUNCTIONS[function_name]
     regions = []
     start_mark = None
     script_str = self.script.get_code_as_str()
@@ -75,7 +79,7 @@ class ParameterChangerManager:
       # Break when we get to the last bracket
       if brackets_count == 0:
         break
-    return ParameterChanger(regions, self.script, self)
+    return ParameterChanger(regions, self.script, self, name_to_param_mapping)
 
   
   def annonate_script(self):
@@ -93,9 +97,22 @@ class ParameterChangerManager:
 
     def re_visitor(match):
       """Called by the regex engine for each function found while annonating"""
+      function_call = match.group()[:-1]
       if not self.is_valid:
         # we need a new ParameterChanger for this function.
-        new_changer = self._create_changer_from_pos(match.start())
+        # First determine which function we found:
+        function_found = None
+        sorted_function_list = PARAMETER_CHANGER_FUNCTIONS.keys()
+        def sort_by_len(w1,w2):
+          return len(w2) - len(w1)
+        sorted_function_list.sort(cmp=sort_by_len) #longer names will appear first        
+        for candidate in sorted_function_list:
+          if candidate+'(' in match.group():
+            function_found = candidate
+            break
+        if not function_found:
+          raise Exception('Unexpected error in function search')
+        new_changer = self._create_changer_from_pos(match.start(), function_found)
         self.changers.append(new_changer)
       # Note that if is_valid == True we assume no new functions were added
       # So we use the old changers in their original order.
@@ -103,7 +120,7 @@ class ParameterChangerManager:
       # We now save the function call code with annonation:
       debug_func = 'services.set_current_changer'
       annonated =  '%s(%d,%s)(' % (
-          debug_func, self.function_counter, match.group()[:-1])
+          debug_func, self.function_counter, function_call)
       self.function_counter += 1
       return annonated
 
@@ -116,8 +133,9 @@ class ParameterChangerManager:
       # TODO(daniv): ignore function calls inside strings
       # TODO(daniv): def with the same name will create an error...
       global PARAMETER_CHANGER_FUNCTIONS
-      func_names = '|'.join(PARAMETER_CHANGER_FUNCTIONS)
-      expression = r'[\w.]*(?:%s)\(' % func_names
+      #must sort by length so that we won't catch small function names inside longer ones:
+      function_list = PARAMETER_CHANGER_FUNCTIONS.keys()
+      expression = r'[\w.]*(?:%s)\(' % '|'.join(function_list)
       self.function_counter = 0
       if PARAMETER_CHANGER_FUNCTIONS:
         res = re.sub(
@@ -168,11 +186,13 @@ ParameterRegion = namedtuple('ParameterRegion',
     ['begin_mark_name','end_mark_name'])
 
 class ParameterChanger:
-  def __init__(self, regions, script, manager):
+  def __init__(self, regions, script, manager, mapping):
     self.regions = regions
     self.manager = manager
     self.script = script
     self.is_valid = True
+    self.mapping = mapping
+    self.namespace = ''
     
   def get_parameters(self):
     with self.script.lock:
@@ -181,7 +201,7 @@ class ParameterChanger:
       return [
           self.script.get_code_as_str(r.begin_mark_name, r.end_mark_name)
           for r in self.regions]
-
+    
   def set_parameters(self, parameters):
     #TODO(daniv): check that parameters are simple
     with self.script.lock:
@@ -196,6 +216,16 @@ class ParameterChanger:
         self.script.insert_text(
             r.begin_mark_name, parameters[i], self.manager)
   
+  def set_namespace(self, namespace):
+    self.namespace = namespace
+  
+  def set_parameter_by_name(self, name, val):
+    if self.namespace:
+      name = self.namespace + '.' + name
+    if not self.mapping or not name in self.mapping:
+      raise Exception('Could not set value for name %s. Current mapping is: %s ' % (name, self.mapping))
+    return self.set_parameter(self.mapping[name], val)
+    
   def set_parameter(self, index, val):
     with self.script.lock:
       if not self.is_valid:
@@ -207,4 +237,21 @@ class ParameterChanger:
           r.begin_mark_name, r.end_mark_name, self.manager)
       self.script.insert_text(
           r.begin_mark_name, val, self.manager)
-    
+
+#register changer decorators:
+
+def register_changer(func):
+  global PARAMETER_CHANGER_FUNCTIONS
+  if func.func_name in PARAMETER_CHANGER_FUNCTIONS and PARAMETER_CHANGER_FUNCTIONS[func.func_name] != None:
+    raise Exception('Two functions with conflicting mappings were registered. Function name is %s' % func.func_name)
+  PARAMETER_CHANGER_FUNCTIONS[func.func_name] = None
+  return func
+
+def register_changer_mapping(mapping):
+  def register_changer_mapping_decorator_with_args(func):
+    global PARAMETER_CHANGER_FUNCTIONS
+    if func.func_name in PARAMETER_CHANGER_FUNCTIONS and PARAMETER_CHANGER_FUNCTIONS[func.func_name] != mapping:
+      raise Exception('Two functions with conflicting mappings were registered. Function name is %s' % func.func_name)
+    PARAMETER_CHANGER_FUNCTIONS[func.func_name] = mapping
+    return func
+  return register_changer_mapping_decorator_with_args

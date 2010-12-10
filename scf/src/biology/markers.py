@@ -14,7 +14,7 @@ def register_marker(name, group='signal', needs_transform=True):
   return _name_to_marker[name]
 
 def marker_from_name(name):
-  return _name_to_marker[name]
+  return _name_to_marker.get(name, None)
 
 def is_marker_registered(name):
   return name in _name_to_marker

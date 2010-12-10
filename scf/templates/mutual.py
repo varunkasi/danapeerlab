@@ -1,13 +1,17 @@
 controls.text_control("""Shows a mutual information matrix, and a plot for the selected dimensions.""")
 
-filename = controls.file_control(None)
-mi_samples = int(controls.slider_control(15000, 500, 50000, 'Samples to use for mutual information calculation'))
+t = controls.load_table(None, None, None)
+default_sample = min((10000. / t.num_cells) * 100, 100)
+mi_samples = controls.slider_control(default_sample, 0, 100, 'Percent of samples to use for mutual information calculation')
+mi_num_samples = int((mi_samples/100) * t.data.shape[0])
+controls.text_control(str(mi_num_samples), 'Number of cells to sample')
+
 truncate_cells_mi = controls.picker_control('Yes', ['Yes', 'No'], 'Remove cells with negative values when calculating mutual information') == 'Yes'
 truncate_cells = controls.picker_control('Yes', ['Yes', 'No'], 'Remove cells with negative values in the plot') == 'Yes'
 disp_full = controls.picker_control('Full Data', ['Full Data', 'Sampled Data'], 'Display full data in plot') == 'Full Data'
 
-t = load_data_table(filename)
-t_samp = t.random_sample(mi_samples)
+
+t_samp = t.random_sample(mi_num_samples)
 t2 = t_samp.get_mutual_information(ignore_negative_values=truncate_cells_mi)
 
 Space('data', 10, 10)

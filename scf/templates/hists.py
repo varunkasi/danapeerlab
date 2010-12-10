@@ -1,7 +1,6 @@
 controls.text_control("""Shows histogram for all markers.""")
 
-file_name = controls.file_control(None)
-t = load_data_table(file_name)
+t = controls.load_table(None, None, None)
 hide_neg = controls.picker_control('Yes', ['Yes', 'No'], 'Hide negative values') == 'Yes'
 
 markers = t.get_markers('surface')
@@ -19,7 +18,7 @@ for i in xrange(len(markers)):
   color='black'
   if neg_cells/num_cells > 0.5:
     color='red'
-  services.print_text('Number of positive cells for %s: %d (%d%%)' % (markers[i], num_cells-neg_cells, 100*neg_cells/num_cells), weight=700, foreground=color)
+  services.print_text('Number of positive cells for %s: %d (%d%% are negative)' % (markers[i], num_cells-neg_cells, 100*neg_cells/num_cells), weight=700, foreground=color)
 
   with s[i].add_ax() as ax:
     ax.figure.text(

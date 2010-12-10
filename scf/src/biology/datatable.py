@@ -19,15 +19,31 @@ from autoreloader import AutoReloader
 
 DimRange = namedtuple('DimRange', ['dim','min', 'max'])
 
+def combine_tables(datatables):
+  def cache(data):
+    print '~!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+    print datatables
+    assert len(datatables)
+    assert all([datatables[0].dims == t.dims for t in datatables])
+    new_data = np.concatenate([t.data for t in datatables])
+    data.new_table = DataTable(
+        new_data, datatables[0].dims, datatables[0].legends)
+  data = services.cache((datatables), cache, False, False)
+  return data.new_table
+
 class DataTable(AutoReloader):
-  def __init__(self, data, dims):
+  def __init__(self, data, dims, legends=None):
     """Creates a new data table. This class is immuteable.
     
     data -- a 2 dimension array with the table data
     dims -- object that are associated with table's columns.
+    legends -- a list from dim index to a dictionary that gives string
+    representation for numeric values.
     """
     self.data = data
+    self.num_cells = float(data.shape[0])
     self.dims = dims
+    self.legends = legends
 
 
   def min(self, dim):
@@ -37,7 +53,7 @@ class DataTable(AutoReloader):
     return np.max(self.get_cols(dim)[0])
 
   def get_markers(self, group):
-    return [d for d in self.dims if marker_from_name(d).group == group] 
+    return [d for d in self.dims if marker_from_name(d) and marker_from_name(d).group == group] 
   
   def get_cols(self, *dims):
     return self.get_points(*dims).T
@@ -145,6 +161,9 @@ class DataTable(AutoReloader):
       bad_dims.append('Cell Length')
       bad_dims.append('Time')
       bad_dims.append('191-DNA')
+      bad_dims.append('cluster_name')
+      bad_dims.append('stim')
+      bad_dims.append('cluster_num')
       dims_to_use = self.dims[:]
       dims_to_use = [d for d in dims_to_use if not d in bad_dims]    
       num_dims = len(dims_to_use)
