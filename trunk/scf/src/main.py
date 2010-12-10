@@ -98,14 +98,15 @@ class Gui(object):
 
     # configuer logging for the application:
     logging.getLogger('').setLevel(logging.DEBUG)
-    textview_log = builder.get_object('textview_log')
-    gui_handler = TextViewHandler(textview_log)
+    self.textview_log = builder.get_object('textview_log')
+    self.gui_handler = TextViewHandler(self.textview_log)
     stream_handler = logging.StreamHandler()
     formatter = logging.Formatter(
         "%(asctime)s - %(levelname)s - %(message)s")
-    gui_handler.setFormatter(formatter)
+    self.gui_handler.setFormatter(formatter)
     stream_handler.setFormatter(formatter)
-    logging.getLogger('').addHandler(gui_handler)
+    # Not adding by default (see view->show logs)
+    #logging.getLogger('').addHandler(gui_handler)
     logging.getLogger('').addHandler(stream_handler)
     
     
@@ -128,7 +129,7 @@ class Gui(object):
     
     
     global services
-    services.init(self.space_manager, self.changer_manager, self.script_server, self.window.get_toplevel(), self.control_box_manager, textview_log)
+    services.init(self.space_manager, self.changer_manager, self.script_server, self.window.get_toplevel(), self.control_box_manager, self.textview_log)
     
     
     
@@ -164,7 +165,9 @@ class Gui(object):
   
   def on_toolbutton_run_clicked(self, toolbutton):
     global services
-    services._cache = {} # todo(daniv) is thread safe?
+    services._cache = {}
+    buff = self.textview_log.get_buffer()
+    buff.delete(buff.get_start_iter(), buff.get_end_iter())
     self.space_manager.clear_spaces()
     self.control_box_manager.clear()
     script_name = self.file_manager.current_file
@@ -174,6 +177,13 @@ class Gui(object):
     self.script_server.add_to_queue(script_name)
     self.toolbutton_run.set_sensitive(False)
 
+  def on_checkmenuitem_show_log_messages_toggled(self, menu_item):
+    print 'adfasdasdfasdffs'
+    if menu_item.get_active():
+      logging.getLogger('').addHandler(self.gui_handler)
+    else:
+      logging.getLogger('').removeHandler(self.gui_handler)
+      
   def on_toolbutton_abort_clicked(self, toolbutoon):
     try:
       self.script_server.terminate_script()

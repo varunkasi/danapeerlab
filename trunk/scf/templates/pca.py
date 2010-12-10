@@ -1,7 +1,6 @@
 controls.text_control("""Shows plots of PCA components for some of the markers.\nPlots are colored by the specified marker.""")
 
-file_name = controls.file_control(None)
-t = load_data_table(file_name)
+t = controls.load_table(None, None, None)
 color_marker = controls.picker_control(None, t.dims, title='Color marker')
 
 p1 = t.add_reduced_dims(

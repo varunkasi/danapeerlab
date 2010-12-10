@@ -91,7 +91,7 @@ class ScriptServer(object):
       from scriptservices import Space
       from controls import display_text
       from controls import display_graph
-      from controls import number_slider
+      #from controls import number_slider
       from controls import choose_file
       from controls import four_spaces
       import numpy as np
@@ -114,6 +114,7 @@ class ScriptServer(object):
     #  logging.error('GUI Exception while running script %s', req.name)
     except:
       logging.exception('Exception while running script %s', req.name)
+      services.print_text('Exception: %s' % sys.exc_info()[1], weight=700, foreground='black')
       #print req.script
     finally:
       #logging.info('Clearing script queue')

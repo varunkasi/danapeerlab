@@ -1,5 +1,6 @@
  #!/usr/bin/env python
 import logging
+import os
 import random
 import pygtk
 import gtk
@@ -16,20 +17,21 @@ from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanva
 #from matplotlib.backends.backend_gtk import NavigationToolbar2GTK as NavigationToolbar
 #from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg as NavigationToolbar
 import parameterchanger
-from controlsmanager import register_control
-from controlsmanager import register_changer
+from dataindex import DataIndex
+from parameterchanger import register_changer
+from parameterchanger import register_changer_mapping
 from scriptservices import services
 from scriptservices import create_sync_wrapper
 from scriptservices import Space
-from parameterchanger import PARAMETER_CHANGER_FUNCTIONS
 import numpy as np
 import controls
 import biology.markers
 from biology.markers import Markers
 from biology.datatable import DimRange
 import biology.markers
+from biology.loaddatatable import load_data_table
 
-def file_dialog(title):
+def file_dialog(title, folder):
   dialog = gtk.FileChooserDialog(
   title=title,
   action=gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -37,19 +39,58 @@ def file_dialog(title):
       gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
       gtk.STOCK_OPEN, gtk.RESPONSE_OK))
   dialog.set_default_response(gtk.RESPONSE_OK)
+  if not folder and services.last_folder:
+    folder = services.last_folder
+  if folder:
+    dialog.set_current_folder(folder)
   filename = None
   if dialog.run() == gtk.RESPONSE_OK:
     filename = dialog.get_filename()
-  dialog.destroy()   
+  dialog.destroy()
+  services.last_folder = os.path.dirname(filename)
   return filename
 
-@register_changer
+@register_changer_mapping({'filename' : 0, 'choices' : 1, 'expanded_titles' : 2})
+def load_table(filename, selected_tags, expanded_titles):
+  filename = file_control(filename)
+  def cache(data):
+    if filename and filename.endswith('.index'):
+      data.index = DataIndex.load(filename)
+    else:
+      data.index = None
+  data = services.cache(filename, cache)
+  
+  if data.index:
+    choice, picker, label = multi_picker_control(
+      selected_tags or [[],[],[]],
+      ['Stims', 'Named Clusters', 'Clusters'],
+      expanded_titles or [False, False, False],
+      [
+          data.index.all_values_for_tag('stim'),
+          data.index.all_values_for_tag('cluster_name'),
+          data.index.all_values_for_tag('cluster_num')],
+      control_title='Stim/Cluster')
+    def predicate(tags):
+      if not selected_tags:
+        return False
+      test0 = 'stim' in tags and tags['stim'] in selected_tags[0]
+      test1 = 'cluster_name' in tags and tags['cluster_name'] in selected_tags[1]
+      test2 = 'cluster_num' in tags and tags['cluster_num'] in selected_tags[2]
+      return test0 and test1 and test2
+    return data.index.load_table(predicate)
+  else:
+    choice = multi_picker_control(
+        [[]], ['a'], [False], [[]], control_title='Stim/Cluster', hidden=True)
+    return load_data_table(filename)
+  
+  
+@register_changer_mapping({'filename' : 0})
 def file_control(filename, title='Filename'):
   def cache(data):
     def button_click(button, changer):
-        new_file = file_dialog(title)
+        new_file = file_dialog(title, filename and os.path.dirname(filename))
         if new_file:
-          changer.set_parameter(0, repr(new_file))
+          changer.set_parameter_by_name('filename', repr(new_file))
           services.replay_script()
     data.button = gtk.Button(label=filename)
     data.button.set_size_request(250,-1)
@@ -77,9 +118,6 @@ def text_control(text, title='Description'):
   data.title_label.set_markup('<b>%s</b>' % title)
   data.text_label.set_label(text)
   return text
-
-#@register_changer
-#def multi_picker_control
 
 @register_changer
 def slider_control(val, min_val, max_val, title='Number'):
@@ -119,6 +157,105 @@ def picker_control(choice, options, title='Choice'):
     data.box.set_active(options.index(choice))
     data.box.handler_unblock(data.handler_id)
   return choice
+
+@register_changer_mapping({'choices' : 0, 'expanded_titles' : 2})
+def multi_picker_control(choices, titles, expanded_titles, option_lists, control_title='Multi Choice', hidden=False):
+  def update_title_values(title_row_iter, data):
+    child_vals = [c[1] for c in title_row_iter.iterchildren()]
+    title_row_iter[1] = any(child_vals)
+    title_row_iter[2] = not all(child_vals) and any(child_vals)
+    title_row_index = int(title_row_iter.path[-1])
+    if all(child_vals):
+      extra_text = 'Any'
+    elif not any(child_vals):
+      extra_text =  'None'
+    else:
+      selected_children_text = [c[0] for c in title_row_iter.iterchildren() if c[1]]
+      extra_text = ', '.join(selected_children_text)
+    new_title = '%s: %s' % (data.titles[title_row_index], extra_text)
+    title_row_iter[0] = new_title
+
+  def cache(data):
+    def update_params(changer, data):
+      new_choices = []
+      for i in xrange(len(data.option_lists)):
+        choices_for_list = []
+        for j in xrange(len(data.option_lists[i])):
+          if(data.tree_store[(i,j)][1]):
+            choices_for_list.append(data.option_lists[i][j])
+        new_choices.append(choices_for_list)
+      expanded = [data.tree_view.row_expanded((i)) for i in xrange(len(data.titles))]
+      changer.set_parameter_by_name('choices', repr(new_choices))
+      changer.set_parameter_by_name('expanded_titles', repr(expanded))
+      changer.set_parameter_by_name('expanded_titles', repr(expanded))
+      
+    def apply_clicked(button, data, changer):
+      update_params(changer, data)
+      services.replay_script()
+
+    def row_expanded_collapsed(treeview, iter, path, data, changer):
+      update_params(changer, data)
+
+    def row_toggled(cell, path, data, changer):
+      data.button.show()
+      parent = data.tree_store[path].parent
+      if parent:
+        data.tree_store[path][1] = not data.tree_store[path][1]
+        update_title_values(parent, data)
+      else:
+        new_val = not any([child[1] for child in data.tree_store[path].iterchildren()])
+        for child in data.tree_store[path].iterchildren():
+          child[1] = new_val
+        update_title_values(data.tree_store[path], data)
+      update_params(changer, data)
+
+    data.tree_store = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_BOOLEAN, gobject.TYPE_BOOLEAN) 
+    data.tree_view = gtk.TreeView(data.tree_store)
+    data.tree_view.connect('row_expanded', row_expanded_collapsed, data, services.get_current_changer())
+    data.tree_view.connect('row_collapsed', row_expanded_collapsed, data, services.get_current_changer())
+    data.tree_view.set_headers_visible(False)
+    data.renderer_toggle = gtk.CellRendererToggle()
+    data.renderer_toggle.set_property('activatable', True)
+    data.renderer_toggle.connect('toggled', row_toggled, data, services.get_current_changer())
+    data.renderer_text = gtk.CellRendererText()
+    data.renderer_text.set_property('wrap-width', 220)
+    data.column0 = gtk.TreeViewColumn("Item", data.renderer_text, text=0)
+    data.column1 = gtk.TreeViewColumn("Selected", data.renderer_toggle, active=1, inconsistent=2) # TODO: add inconsistent here
+    #data.renderer_text.set_fixed_size(250,-1)
+    data.tree_view.append_column(data.column0)
+    data.tree_view.append_column(data.column1)
+    data.vbox = gtk.VBox()    
+    data.vbox.pack_start(data.tree_view)
+    data.button = gtk.Button('Apply')
+    data.button.connect('clicked', apply_clicked, data, services.get_current_changer())
+    data.vbox.pack_start(data.button)
+    data.tree_view.show()
+    data.vbox.show()
+    data.title_label = services.add_widget_in_control_box(control_title, data.vbox)
+  
+  data = services.cache(None, cache, False, True)
+  data.titles = titles
+  data.option_lists = option_lists
+  data.tree_store.clear()
+  for i in xrange(len(titles)):
+    child_vals = [text in choices[i] for text in option_lists[i]]
+    parent = data.tree_store.append(
+        None, ('', False, False)) # we will set the values with update_title_values
+    for j in xrange(len(option_lists[i])):
+      text = option_lists[i][j]
+      data.tree_store.append(parent, (text, text in choices[i], False))
+    update_title_values(data.tree_store[parent], data)
+    if expanded_titles[i]:
+      data.tree_view.expand_row(data.tree_store[parent].path, True)
+  data.button.hide()
+  data.title_label.set_markup('<b>%s</b>' % control_title)
+  if hidden:
+    data.vbox.hide()
+    data.title_label.hide()
+  else:
+    data.vbox.show()
+    data.title_label.show()
+  return choices
 
 
 def spaces_ml(rows_per_page, cols_per_page, how_many, name='data'):
@@ -508,6 +645,8 @@ def kde1d(datatable, marker, min_x=None, max_x=None):
       max_x_ = np.max(points) + range / 10
     
     from mlabwrap import mlab
+    print 'asdfafasfasdfas~~~~'
+    print points
     data.bandwidth, data.density, data.xmesh = mlab.kde(
         points, 2**12, min_x_, max_x_, nout=3)
     data.xmesh = data.xmesh[0]
@@ -636,40 +775,40 @@ def display_graph(x_vals, y_vals, x_min=None, x_max=None, y_min=None, y_max=None
   data = services.cache((x_min, x_max, y_min, y_max), create_data, True, False)
   gobject.idle_add(update_widget, data)
  
-@register_control('number_slider', True) 
-class NumberSliderGui(object):
-  def create_widget(self, num, min_val, max_val, inc=None):
-    self.widget = gtk.HScale()
-    self.widget.set_draw_value(True)
-    self.widget.set_digits(5)
-    #self.widget.connect('change-value', self.value_changed)
-    self.should_sample = False
-    self.widget.connect('button-press-event', self.button_press)
-    self.widget.connect('button-release-event', self.button_release)
+#@register_control('number_slider', True) 
+#class NumberSliderGui(object):
+#  def create_widget(self, num, min_val, max_val, inc=None):
+#    self.widget = gtk.HScale()
+#    self.widget.set_draw_value(True)
+#    self.widget.set_digits(5)
+#    #self.widget.connect('change-value', self.value_changed)
+#    self.should_sample = False
+#    self.widget.connect('button-press-event', self.button_press)
+#    self.widget.connect('button-release-event', self.button_release)
 
-  def button_press(self, widget, event):
+#  def button_press(self, widget, event):
     #logging.debug('SCROLL_START')
-    self.should_sample = True
-    gobject.timeout_add(30, self.update_script)
+#    self.should_sample = True
+#    gobject.timeout_add(30, self.update_script)
 
-  def button_release(self, widget, event):
+#  def button_release(self, widget, event):
     #logging.debug('SCROLL_END')
-    self.should_sample = False
+#    self.should_sample = False
    
-  def update_script(self):
-    self.changer.set_parameter(0, self.widget.get_value())
-    self.services.replay_script(self)  
-    return self.should_sample  
+#  def update_script(self):
+#    self.changer.set_parameter(0, self.widget.get_value())
+#    self.services.replay_script(self)  
+#    return self.should_sample  
 
-  def update_widget(self, num, min_val, max_val, inc=None):
-    if self.services.get_script_sender() == self:
-      return num
-    if not inc:
-      inc = max_val - min_val / 100
-    gobject.idle_add(self.widget.set_range, min_val, max_val)
-    gobject.idle_add(self.widget.set_increments, inc, inc * 5)
-    gobject.idle_add(self.widget.set_value, num)
-    return num
+#  def update_widget(self, num, min_val, max_val, inc=None):
+#    if self.services.get_script_sender() == self:
+#      return num
+#    if not inc:
+#      inc = max_val - min_val / 100
+#    gobject.idle_add(self.widget.set_range, min_val, max_val)
+#    gobject.idle_add(self.widget.set_increments, inc, inc * 5)
+#    gobject.idle_add(self.widget.set_value, num)
+#    return num
 
 @register_changer
 def choose_marker(marker=None, all_markers=None, change_param=True):

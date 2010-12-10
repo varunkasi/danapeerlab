@@ -3,11 +3,11 @@ controls.text_control("""The first pane allows you to choose a region to zoom.
 The second pane shows the zoomed region, and allows you to choose a region to gate.
 
 The gated region is displayed in the two lower panes.""")
-filename = controls.file_control(None)
+t = controls.load_table(None, None, None)
 
 s_1, s_2, s_3, s_4 = controls.four_spaces()
 
-t = load_data_table(filename)
+
 
 hist_dim = controls.picker_control(None, t.dims, title='Dimension for histogram')
 
