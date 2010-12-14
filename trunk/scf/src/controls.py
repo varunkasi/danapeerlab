@@ -645,8 +645,6 @@ def kde1d(datatable, marker, min_x=None, max_x=None):
       max_x_ = np.max(points) + range / 10
     
     from mlabwrap import mlab
-    print 'asdfafasfasdfas~~~~'
-    print points
     data.bandwidth, data.density, data.xmesh = mlab.kde(
         points, 2**12, min_x_, max_x_, nout=3)
     data.xmesh = data.xmesh[0]
@@ -659,7 +657,7 @@ def kde1d(datatable, marker, min_x=None, max_x=None):
   display_graph(data.xmesh, data.density)
     
   
-def kde2d(datatable, markers, range, title=None, *args, **kargs):
+def kde2d(datatable, markers, range, title=None, norm_axis=None, norm_axis_thresh = 0.1, *args, **kargs):
   ax = services.get_ax()
   #markers = biology.markers.normalize_markers(markers)
   def cached(data):
@@ -680,21 +678,29 @@ def kde2d(datatable, markers, range, title=None, *args, **kargs):
         points, 256,        
         [[min_a, min_w]],
         [[max_a, max_w]],
-        nout=4)
-        
-#    if X[0,0] > X[0,-1]: 
-#      X = X[:,::-1]
-#      density = density[::-1,:]
-#    if Y[0,0] > Y[-1,0]:  
-#      Y = Y[::-1,:]
-#      density = density[:,::-1]  
+        nout=4)    
   data = services.cache((datatable, markers, range, args, kargs), cached, True, False)  
+  
+  display_data = data.density
+  if norm_axis == 'x':
+    max_dens_x = np.array([np.max(data.density, axis=1)]).T
+    if norm_axis_thresh:
+      max_dens_x[max_dens_x < norm_axis_thresh] = np.inf
+    data.density_x = data.density / max_dens_x
+    display_data = data.density_x
+  elif norm_axis == 'y':
+    max_dens_y = np.array([np.max(data.density, axis=0)])
+    if norm_axis_thresh:
+      max_dens_y[max_dens_y < norm_axis_thresh] = np.inf
+    data.density_y = data.density / max_dens_y
+    display_data = data.density_y
+
   if title:
     data.ax.set_title(title)
   ax.set_xlabel(str(markers[0]) + '   ')
   ax.set_ylabel(str(markers[1]) + '   ')
   display_image(
-    data.density,
+    display_data,
     origin='lower', 
     extent=[
         data.X[0,0],
@@ -720,6 +726,7 @@ def display_image(Z, extent, *args, **kargs):
     #ls = LightSource(azdeg=0,altdeg=65)
     #rgb = ls.shade(Z, cm.jet)
     data.image = data.ax.imshow(Z, extent=extent, *args, **kargs)
+    data.colorbar = data.ax.figure.colorbar(data.image)
     data.ax.set_aspect('auto')
   
   def update_gui(data):
@@ -727,9 +734,10 @@ def display_image(Z, extent, *args, **kargs):
     #ls = LightSource(azdeg=0,altdeg=65)
     #rgb = ls.shade(Z, cm.jet)   
     data.image.set_extent(extent)
-    data.image.set_data(Z)
+    data.image.set_data(Z)   
     #print data.image.get_clim()
     data.image.autoscale()
+    data.colorbar.update_bruteforce(data.image)
     #print data.image.get_clim()
     data.ax.figure.canvas.draw()
 
