@@ -6,7 +6,7 @@ mi_samples = controls.slider_control(default_sample, 0, 100, 'Percent of samples
 mi_num_samples = int((mi_samples/100) * t.data.shape[0])
 controls.text_control(str(mi_num_samples), 'Number of cells to sample')
 norm_axis = controls.picker_control('None', ['None', 'X', 'Y'], 'Normalization axis in density plot')
-norm_thresh = controls.slider_control(0, -10, -10, 'Min density for rows/columns when normalizing (log scale)')
+norm_thresh = controls.slider_control(-3, -10, 0, 'Min density for rows/columns when normalizing (log scale)')
 if norm_axis == 'None':
   norm_axis = 'None'
 else:
