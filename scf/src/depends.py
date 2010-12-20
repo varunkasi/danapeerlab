@@ -90,7 +90,7 @@ if __name__ == '__main__':
   if sys.platform == 'darwin':
     os.system('sh')
 
-def test_gtksourceview
+def test_gtksourceview():
   try:
     import gtksourceview2
   except ImportError:
