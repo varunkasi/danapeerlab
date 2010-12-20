@@ -80,6 +80,7 @@ def fix_path():
   set_python_path()
   print 'Loading matlab...'
   set_matlab_path()
+  test_gtksourceview()
     
 if __name__ == '__main__':
   fix_path()
@@ -88,9 +89,10 @@ if __name__ == '__main__':
     os.system('cmd')
   if sys.platform == 'darwin':
     os.system('sh')
-    
-try:
-  import gtksourceview2
-except ImportError:
-  print 'Can\'t start: gtksourceview2 is missing. Make sure you extracted the dependency archives in the right place.'
-  sys.exit()
+
+def test_gtksourceview
+  try:
+    import gtksourceview2
+  except ImportError:
+    print 'Can\'t start: gtksourceview2 is missing. Make sure you extracted the dependency archives in the right place.'
+    sys.exit()
