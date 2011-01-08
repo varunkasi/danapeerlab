@@ -1,0 +1,26 @@
+﻿<table id="{{ id }}" class="tablesorter">
+<thead>
+<tr>
+{% for col_name in col_names %}
+  <th> {{ col_name }} </th>
+{% endfor %}
+</tr>
+</thead>
+<tbody>
+{% for line in lines %}
+<tr>
+{% for val in line %}
+  <td> {{ val|safe }} </td>
+{% endfor %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<script type="text/javascript">
+$(document).ready(function() 
+    { 
+        $("#{{ id }}").tablesorter( {sortList: {{ sort|safe }}} ); 
+    } 
+);
+</script>
