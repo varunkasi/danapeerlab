@@ -14,6 +14,7 @@ from biology.markers import marker_from_name
 from biology.markers import normalize_markers
 from autoreloader import AutoReloader
 from scriptservices import services
+from multitimer import MultiTimer
 
 DimRange = namedtuple('DimRange', ['dim','min', 'max'])
 
@@ -169,9 +170,11 @@ class DataTable(AutoReloader):
       dims_to_use = [d for d in dims_to_use if not d in bad_dims]    
       num_dims = len(dims_to_use)
       res = np.zeros((num_dims, num_dims))
+      logging.info(
+          'Calculating mutual information for %d pairs...' % ((num_dims ** 2 - num_dims) / 2))
+      timer = MultiTimer((num_dims ** 2 - num_dims) / 2)
       for i in xrange(num_dims):
         for j in xrange(i):
-          logging.info('Calculating mutual information between %s and %s' % (dims_to_use[i], dims_to_use[j]))
           arr = self.get_points(dims_to_use[i], dims_to_use[j])
           if ignore_negative_values:
             arr = arr[np.all(arr > 0, axis=1)]
@@ -183,6 +186,7 @@ class DataTable(AutoReloader):
           #print arr.shape
           res[i,j] = mlab.mutualinfo_ap(arr, nout=1)
           res[j,i] = 0
+          timer.complete_task('%s, %s' % (dims_to_use[i], dims_to_use[j]))
       data.res = DataTable(res, dims_to_use)
     data = services.cache((self,ignore_negative_values), cache)
     return data.res

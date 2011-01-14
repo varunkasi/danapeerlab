@@ -67,8 +67,8 @@ def fcsextract(filename):
     data = fcs.read(data_end-data_start+1)
 
   #Determine data format
-  for key in fcs_vars.keys():
-    print '%s:\t\t\t%s' % (key, fcs_vars[key])
+  #for key in fcs_vars.keys():
+  #  print '%s:\t\t\t%s' % (key, fcs_vars[key])
   is_peng = False
   if fcs_vars.get('$COM', None) == 'PengQiu FCS writer':
     is_peng = True
@@ -89,7 +89,7 @@ def fcsextract(filename):
         fcs_vars['$GUID'] = key
       elif not key.startswith('$'):
         if not val.startswith('$'):
-          logging.warning('***' + key +':' + val)
+          #logging.warning('***' + key +':' + val)
           continue
         del fcs_vars[key]
         fcs_vars[val] = key
@@ -110,9 +110,9 @@ def fcsextract(filename):
     endian = fcs_vars['$BYTEORD']
     if endian == "4,3,2,1":
         endian = ">" # set proper data mode for struct module
-        print "Big endian data format"
+        #print "Big endian data format"
     elif endian == "1,2,3,4":
-        print "Little endian data format"
+        #print "Little endian data format"
         endian = "<" # set proper data mode for struct module
     else:
         assert False,"Error: This script can only read data encoded with $BYTEORD = 1,2,3,4 or 4,3,2,1"
@@ -160,5 +160,5 @@ def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[]):
     extra_vals_arr = np.repeat(extra_vals_arr, data.shape[0], axis=0)
     data = np.append(data, extra_vals_arr, axis=1)    
     load_data_table_CACHE[filename] = biology.datatable.DataTable(data, dim_names, legends)
-    logging.info('Loaded %d cells from file %s' % (load_data_table_CACHE[filename].data.shape[0], filename))
+    logging.info('Loaded %d cells from file %s' % (load_data_table_CACHE[filename].data.shape[0], filename[:30]))
   return load_data_table_CACHE[filename]

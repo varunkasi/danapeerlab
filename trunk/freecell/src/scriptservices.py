@@ -21,6 +21,10 @@ class ScriptServices(object):
     self._text.append(text)
   
   def cache(self, key, new_func):
+    data = AttrDict()
+    new_func(data)
+    return data
+
     key = self.make_hashable(key)
     if not key in self._cache:
       data = AttrDict()
