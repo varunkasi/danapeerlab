@@ -47,8 +47,8 @@ class Kde2d(Widget):
       data.density_y = data.density / max_dens_y
       display_data = data.density_y
   
-  ax.set_xlabel(str(markers[0]) + '   ')
-  ax.set_ylabel(str(markers[1]) + '   ')
+  ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
+  ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
   display_image(
     display_data,
     origin='lower', 

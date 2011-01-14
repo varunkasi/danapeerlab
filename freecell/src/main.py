@@ -1,6 +1,9 @@
 ﻿#!/usr/bin/env python
 from depends import fix_path
 fix_path()
+import matplotlib
+matplotlib.use('Agg')
+import logging
 import web
 import os
 import settings
@@ -8,11 +11,10 @@ import settings
 from widgets.population_report import PopulationReport
 
 urls = (
-    '/', 'Report'
+    '/', 'Report', 
     '/images/(.*)', 'Images' #this is where the image folder is located....
-
 )
-app = web.application(urls, globals(), autoreload=True)
+app = web.application(urls, globals(), autoreload=False)
 
 class Report:
     def __init__(self):
@@ -39,6 +41,14 @@ class Images:
             raise web.notfound()
 
 if __name__ == "__main__":
+    # configuer logging for the application:
+    logging.getLogger('').setLevel(logging.DEBUG)
+    stream_handler = logging.StreamHandler()
+    formatter = logging.Formatter(
+        "[%(levelname)s] %(message)s", )
+    stream_handler.setFormatter(formatter)
+    logging.getLogger('').addHandler(stream_handler)   
+
     # To serve from the static dir:
     os.chdir(settings.FREECELL_DIR)
     
@@ -47,6 +57,6 @@ if __name__ == "__main__":
     settings.configure()
 
     report = PopulationReport()
-    view = report.view()
+    view = report.view()    
 
     app.run()

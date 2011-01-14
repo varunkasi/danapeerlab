@@ -16,8 +16,8 @@ class View(object):
     self.append_view_files(other_view)
     
   def append_view_files(self, other_view):
-    self.css_files.append(other_view.css_fies)
-    self.js_files.append(other_view.css_fies)
+    self.css_files.union(other_view.css_files)
+    self.js_files.union(other_view.js_files)
     self.images.update(other_view.images)
     
   def create_page(self):
