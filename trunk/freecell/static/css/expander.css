@@ -1,0 +1,23 @@
+.expand_box {
+  margin:0;
+  padding:0.5em 0.5em 0.5em 0.5em;
+
+  text-align:left;
+  border:1px solid #ccc;
+}
+
+.expand_box a:link, .expand_box  a:visited {
+  border:1px dotted #ccc;
+  border-width:0;
+  text-decoration:none;
+  color:black;
+}
+.expand_box a:hover, .expand_box a:active, .expand_box a:focus {
+  border-style:solid;
+  background-color:#f0f0f0;
+  text-decoration:underline;
+  outline:0 none
+}
+.expand_box a:active, .expand_box a:focus {
+  color:red;
+}

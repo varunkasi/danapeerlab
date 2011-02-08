@@ -1,0 +1,22 @@
+﻿html {
+  height:100%
+}
+body {
+  margin:0.5em;
+  padding:0;
+  background:#fff;
+  color:#333;
+  font:76%/1.6 verdana,geneva,lucida,'lucida grande',arial,helvetica,sans-serif; 
+}
+h2 {
+  font-size:2em;
+  margin-top:0;
+  margin-bottom:0.5em;
+  padding:3px;
+  background-color:#eee;
+}
+h3 { 
+  margin-top:0.5em;
+  margin-bottom:0;
+  font-size:1.5em;
+}

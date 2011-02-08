@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 from depends import fix_path
 fix_path()
 import matplotlib
@@ -9,7 +9,9 @@ import os
 import settings
 
 from widgets.population_report import PopulationReport
-
+from widgets.histogram_report import HistogramReport
+from widgets.correlation_report import CorrelationReport
+from widgets.population_report import SlicesReport
 urls = (
     '/', 'Report', 
     '/images/(.*)', 'Images' #this is where the image folder is located....
@@ -56,7 +58,10 @@ if __name__ == "__main__":
     from django.conf import settings
     settings.configure()
 
+    #report = SlicesReport()
     report = PopulationReport()
+    #report = CorrelationReport()
+    #report = HistogramReport()
     view = report.view()    
 
     app.run()

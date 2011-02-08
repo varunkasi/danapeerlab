@@ -1,7 +1,22 @@
-﻿<table id="{{ id }}" class="tablesorter">
+{% if vertical_header %}
+<table id="{{ id }}" class="tablesorter">
+<tbody>
+{% for key,vals in data.items %}
+<tr>
+  <th> {{ key }} </th>
+  {% for val in vals %}
+  <td> {{ val|safe }} </td> 
+  {% endfor %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% else %}
+<table id="{{ id }}" class="tablesorter">
 <thead>
 <tr>
-{% for col_name in col_names %}
+{% for col_name in header_names %}
   <th> {{ col_name }} </th>
 {% endfor %}
 </tr>
@@ -21,6 +36,7 @@
 $(document).ready(function() 
     { 
         $("#{{ id }}").tablesorter( {sortList: {{ sort|safe }}} ); 
-    } 
+    }
 );
 </script>
+{% endif %}

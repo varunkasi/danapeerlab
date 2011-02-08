@@ -14,8 +14,59 @@ def new_figure(x_size=256, y_size=256):
   DPI = 100
   return Figure(figsize=(x_size / DPI, y_size / DPI))
 
-
-def scatter(ax, datatable, markers, range=None, color_marker=None,
+def small_ticks(ax):
+  for label in  ax.yaxis.get_ticklabels() + ax.xaxis.get_ticklabels():
+    label.set_fontsize('xx-small')
+  
+def points(ax, datatable, markers):
+  points = datatable.get_cols(*markers)
+  ax.scatter(points[0], points[1], s=1, marker='o')
+  ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
+  ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
+  ax.figure.subplots_adjust(bottom=0.15)
+  
+def scatter_data(datatable, markers, range=None, norm_axis=None, norm_axis_thresh=0, no_bins=512j):
+  cols = datatable.get_cols(*markers)
+  if not range:
+    range = [min(cols[0]), min(cols[1]), max(cols[0]), max(cols[1])]
+  hist, x_edges, y_edges = np.histogram2d(
+      cols[0], 
+      cols[1], 
+      [
+          np.r_[range[0]:range[2]:no_bins], 
+          np.r_[range[1]:range[3]:no_bins]])
+  extent=[
+      x_edges[0],
+      x_edges[-1],
+      y_edges[0],
+      y_edges[-1]]
+  
+  if norm_axis == 'y':
+    max_dens_x = np.array([np.max(hist, axis=1)]).T
+    if norm_axis_thresh:
+      max_dens_x[max_dens_x < norm_axis_thresh] = np.inf
+    hist = hist / max_dens_x
+  elif norm_axis == 'x':
+    max_dens_y = np.array([np.max(hist, axis=0)])
+    if norm_axis_thresh:
+      max_dens_y[max_dens_y < norm_axis_thresh] = np.inf
+    hist = hist / max_dens_y
+  return hist, extent, x_edges, y_edges
+  
+def scatter(
+    ax, datatable, markers, range=None, norm_axis=None, norm_axis_thresh=None, no_bins=512j):
+  hist, extent, x_edges, y_edges = scatter_data(datatable, markers, range, norm_axis, norm_axis_thresh, no_bins)
+  image = ax.imshow(hist.T, extent=extent, cmap=cm.gist_yarg, origin='lower')
+  ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
+  ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
+  ax.figure.subplots_adjust(bottom=0.15)
+  #ax.figure.colorbar(image)
+  ax.set_aspect('auto')
+  return ax, hist
+            
+  
+  
+def scatter2(ax, datatable, markers, range=None, color_marker=None,
     min_cells_per_bin=1,no_bins=512j):
   def cached(data):
     cols = datatable.get_cols(*markers)
@@ -57,7 +108,7 @@ def scatter(ax, datatable, markers, range=None, color_marker=None,
         data.x_edges[-1],
         data.y_edges[0],
         data.y_edges[-1]]
-  image = ax.imshow(data_to_draw, extent=extent, cmap=cmap)
+  image = ax.imshow(data_to_draw.T, extent=extent, cmap=cmap, origin='lower')
   ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
   ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
   ax.figure.subplots_adjust(bottom=0.15)
@@ -65,6 +116,13 @@ def scatter(ax, datatable, markers, range=None, color_marker=None,
   ax.set_aspect('auto')
   return ax
 
+def remove_ticks(ax):
+  plt.setp(
+      ax.get_xticklabels() +
+      ax.get_xticklines()  +
+      ax.get_yticklabels() +
+      ax.get_yticklines(), visible=False)
+  
 def kde2d_color_hist(
     fig, datatable, markers, range, norm_axis=None, norm_axis_thresh = None, res=256):
   ax_main = fig.add_subplot(111)
@@ -88,9 +146,12 @@ def kde2d_color_hist(
   density, X, Y = kde2d(
       ax_main, datatable, markers, range, norm_axis, norm_axis_thresh, res)
   x_hist, x_top_edges = np.histogram(datatable.get_cols(markers[0]), bins=X[0])
-  image = ax_hist_x.imshow(np.log([x_hist]), extent=(X[0,0], X[0,-1], 0, 1), cmap=cm.jet)
+  image = ax_hist_x.imshow(np.log([x_hist]), extent=(X[0,0], X[0,-1], 0, 1), cmap=cm.jet, origin='lower')
   y_hist, y_top_edges = np.histogram(datatable.get_cols(markers[1]), bins=Y[:,0])
-  image = ax_hist_y.imshow(np.log([y_hist]).T, extent=(0,1,Y[0,0], Y[-1,0]), cmap=cm.jet)
+  image = ax_hist_y.imshow(np.log([y_hist]).T, extent=(0,1,Y[0,0], Y[-1,0]), cmap=cm.jet, origin='lower')
+  ax_main.set_xlabel(str(markers[0]) + '   ', size='x-small')
+  ax_main.set_ylabel(str(markers[1]) + '   ', size='x-small')
+  ax_main.figure.subplots_adjust(bottom=0.15)
 
   #for i in xrange(len(X[0])):
   #  print X[0,i], top_edges[i]
@@ -99,14 +160,62 @@ def kde2d_color_hist(
   #print '*'
   
   
-  
+def kde1d_points(ax, points, min_x=None, max_x=None, norm=1):
+  range = np.max(points) - np.min(points)
+  min_x_ = min_x
+  max_x_ = max_x
+  if min_x == None:
+    min_x_ = np.min(points) - range / 10
+  if max_x == None:
+    max_x_ = np.max(points) + range / 10
+  from mlabwrap import mlab
+  bandwidth, density, xmesh = mlab.kde(
+      np.array([points]).T, 2**12, min_x_, max_x_, nout=3)
+  xmesh = xmesh[0]
+  density = density.T[0]
+  density = np.multiply(density, float(norm))
+  ax.plot(xmesh, density)
+  return ax
+
+def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1):
+  def cached(data):
+    points = datatable.get_cols(marker)[0]
+    range = np.max(points) - np.min(points)
+    min_x_ = min_x
+    max_x_ = max_x
+    if min_x == None:
+      min_x_ = np.min(points) - range / 10
+    if max_x == None:
+      max_x_ = np.max(points) + range / 10
+    from mlabwrap import mlab
+    data.bandwidth, data.density, data.xmesh = mlab.kde(
+        points, 2**12, min_x_, max_x_, nout=3)
+    data.xmesh = data.xmesh[0]
+    #print 'den:' + str(np.shape(data.density[0]))
+    data.density = data.density.T[0]
+    data.density = np.multiply(data.density, float(norm))
+  data = services.cache((datatable, marker, min_x, max_x), cached) 
+  ax.plot(data.xmesh, data.density)
+  ax.set_title(marker)
+  return ax
   
 def kde2d(
-    ax, datatable, markers, range, norm_axis=None, norm_axis_thresh = None, res=256):
+    ax, datatable, markers, range=None, norm_axis=None, norm_axis_thresh = None, res=256):
+  
+  display_data, extent, density, X, Y = kde2d_data(
+      datatable, markers, range, norm_axis, norm_axis_thresh, res)
+  image = ax.imshow(display_data, extent=extent, origin='lower')
+  #ax.figure.colorbar(image)
+  ax.set_aspect('auto')
+  return density, X, Y
+
+def kde2d_data(
+    datatable, markers, range=None, norm_axis=None, norm_axis_thresh = None, res=256):
   def cached(data):
     from mlabwrap import mlab
     a, w = datatable.get_cols(markers[0], markers[1])
     if range:
+      min_a = range[0]
       min_a = range[0]
       max_a = range[2]
       min_w = range[1]
@@ -121,8 +230,8 @@ def kde2d(
         points, res,        
         [[min_a, min_w]],
         [[max_a, max_w]],
-        nout=4)    
-  data = services.cache((datatable, markers, range), cached)  
+        nout=4)
+  data = services.cache((datatable, markers, range), cached)
   display_data = data.density
   if norm_axis == 'x':
     max_dens_x = np.array([np.max(data.density, axis=1)]).T
@@ -136,15 +245,10 @@ def kde2d(
       max_dens_y[max_dens_y < norm_axis_thresh] = np.inf
     data.density_y = data.density / max_dens_y
     display_data = data.density_y
-  ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
-  ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
-  ax.figure.subplots_adjust(bottom=0.15)
   extent=[
       data.X[0,0],
       data.X[0,-1],
       data.Y[0,0],
       data.Y[-1,0]]    
-  image = ax.imshow(display_data, extent=extent)
-  #ax.figure.colorbar(image)
-  ax.set_aspect('auto')
-  return data.density, data.X, data.Y
+  return display_data, extent, data.density, data.X, data.Y
+
