@@ -23,11 +23,13 @@ def set_matlab_path():
   dr_path = os.path.join(matlab_path, 'drtoolbox')
   dr_tech_path = os.path.join(dr_path, 'techniques')
   dr_gui_path = os.path.join(dr_path, 'gui')
+  emgm_path = os.path.join(matlab_path, 'emgm') 
   add_path(matlab_path)
   add_path(isomap_path)
   add_path(dr_path)
   add_path(dr_tech_path)
   add_path(dr_gui_path)
+  add_path(emgm_path)
 
 def get_platform():
   is_64 = "64 bits" in sys.version
@@ -82,11 +84,12 @@ def set_env_vars():
     #  os.environ['DYLD_LIBRARY_PATH'] = old_path + ":" +  new_path
     #print 'DYLD_LIBRARY_PATH is now: %s' % os.getenv('DYLD_LIBRARY_PATH')
       
-def fix_path():
+def fix_path(skip_matlab=False):
   set_env_vars()
   set_python_path()
-  print 'Loading matlab...'
-  #set_matlab_path()
+  if not skip_matlab:
+    print 'Loading matlab...'
+    set_matlab_path()
     
 if __name__ == '__main__':
   fix_path()

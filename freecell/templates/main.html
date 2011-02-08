@@ -4,6 +4,7 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<title>FreeCell | Population Report</title>
+  <link rel="stylesheet" type="text/css" href="/static/css/main.css" />    
 	{% for css_file in css %}
   <link rel="stylesheet" type="text/css" href="/static/css/{{ css_file }}" />    
   {% endfor %}
@@ -13,9 +14,7 @@
   {% endfor %}
 </head>
 
-<body>
-  {{ main_html|safe }}
-</body>
+<body>{{ main_html|safe }}</body>
 
 </html>
 

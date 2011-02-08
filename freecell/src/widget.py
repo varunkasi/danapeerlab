@@ -26,3 +26,6 @@ class Widget(object):
       self, template_file, context, css_files=[], js_files=[]):
     html = render(template_file, context)
     return View(self, html, css_files, js_files)
+    
+
+    

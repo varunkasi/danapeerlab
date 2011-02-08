@@ -1,4 +1,9 @@
 /* tables */
+table.tablesorter tbody {
+  height: 300px;
+  overflow: auto;
+}
+
 table.tablesorter {
 	font-family:arial;
 	background-color: #CDCDCD;

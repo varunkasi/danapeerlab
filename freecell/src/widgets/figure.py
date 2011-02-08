@@ -1,5 +1,6 @@
 ﻿#!/usr/bin/env python
 import os
+import axes
 from widget import Widget
 from view import View
 from view import render
@@ -16,7 +17,11 @@ class Figure(Widget):
   def __init__(self):
     Widget.__init__(self)
     
-  def view(self, fig):
+  
+  def view(self, fig, small_ticks=True):
+    if small_ticks:
+      for ax in fig.get_axes():
+        axes.small_ticks(ax)
     id = self._get_unique_id()
     image_filename = '%s.png' % id
     full_filename = os.path.join(settings.FREECELL_DIR, 'static', 'images', image_filename)
