@@ -23,22 +23,28 @@ from biology.datatable import DimRange
 class HistogramReport(Widget):
   def __init__(self):
     Widget.__init__(self)
+
+  
+class FitReport(Widget):
+  def __init__(self):
+    Widget.__init__(self)
     self.widgets.expander = Expander()
     self.widgets.surface_table = FitTable()
     self.widgets.signal_table = FitTable()
     #self.widgets.dim_table = DimTable()
 
   def view(self):
-    cluster_name = 'CD8+ T-cells'
+    cluster_name = 'B-cells CD20+'    
+    stim='Unstim_' #'All'
     index = DataIndex.load(r'c:\cytof54_clustered\cytof54.index')
-    t = index.load_table(cluster_name=cluster_name)
+    t = index.load_table(cluster_name=cluster_name, stim=stim)
     #t = t.gate(
     #    DimRange('167-CD38', -20, 6.2),
     #    DimRange('146-CD8', 4, 6))
     surface_table = self.widgets.surface_table.view(t, t.get_markers('surface'))
     signal_table = self.widgets.surface_table.view(t, t.get_markers('signal'))
     return self.widgets.expander.view(
-        'Histogram report for %s' % cluster_name,
+        'Histogram report for %s, %s' % (cluster_name, stim),
         ('Surface Markers' ,'Signaling Markers'),
         (surface_table, signal_table))
     

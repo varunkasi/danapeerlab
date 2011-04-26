@@ -15,7 +15,9 @@ from biology.markers import marker_from_name
 from biology.markers import normalize_markers
 from autoreloader import AutoReloader
 from scriptservices import services
+from scriptservices import cache
 from multitimer import MultiTimer
+import hashlib
 
 DimRange = namedtuple('DimRange', ['dim','min', 'max'])
 
@@ -34,7 +36,7 @@ def fake_table(*args, **kargs):
   dims = ['dim%d' % i for i in xrange(len(args))]
   data = np.array(vals).T
   return DataTable(data, dims)
-  
+
 
 def combine_tables(datatables):
   def cache(data):
@@ -62,13 +64,17 @@ class DataTable(AutoReloader):
     self.num_cells = float(data.shape[0])
     self.properties = {}
 
+  def __hash__(self):
+    return hash(
+        hashlib.sha1(self.data.flatten()).hexdigest())
+
   def __getitem__(self, dim):
     return self.get(dim)
-   
+  
   def get(self, dim, index=0):
     dim_i = self.dims.index(dim)
     return self.data[index, dim_i]
-    
+   
   def min(self, dim):
     return np.min(self.get_cols(dim)[0])
 
@@ -92,7 +98,7 @@ class DataTable(AutoReloader):
           self.legends,
           self.sub_name('%.2f<=%s<%.2f' % (bins[i-1], dim, bins[i]))))
     return splitted
-    
+
   def gaussian_pdf_compare(self, dim, num_bins=100, gaussian_mean=None, gaussian_std=None):   
     # get data
     p = self.get_points(dim)
@@ -114,8 +120,7 @@ class DataTable(AutoReloader):
     #print 'data:%.2f' %  sum(data_histogram)
     diff = np.abs(gaussian_histogram - data_histogram)
     return sum(diff)
-    
-  
+
   def emgm(self, dims, k, auto_centers=False):
     if auto_centers and len(dims)>1:
       raise Exception('k too big')
@@ -141,7 +146,7 @@ class DataTable(AutoReloader):
       t.properties['original_table'] = self
     #print llh
     return tables, llh[0][-1]
-  
+
   def kmeans(self, dims, k):
     points = self.get_points(*dims)
     from mlabwrap import mlab
@@ -183,6 +188,7 @@ class DataTable(AutoReloader):
     add_stat(s, 'max', np.max(p))
     add_stat(s, 'average', np.average(p))
     add_stat(s, 'std', np.std(p))
+    add_stat(s, 'median', np.median(p))
     add_stat(s, 'gaussian_fit', 
         self.gaussian_pdf_compare(
             dim, 100,
@@ -258,43 +264,38 @@ class DataTable(AutoReloader):
   def arcsinh_transform(self):
     def cache(data):
       data_copy = np.copy(self.data)      
-      data_copy = np.arcsinh(data_copy)
+      data_copy = np.arcsinh(data_copy / 5)
       data.table = DataTable(data_copy, self.dims)
     data = services.cache(self, cache)
     return data.table
     
-  def add_reduced_dims(self, method, no_dims, dims_to_use=None, name_for_dim=None, *args, **kargs):
+  def add_reduced_dims(self, method, no_dims, dims_to_use=None, *args, **kargs):
     if not dims_to_use:
       dims_to_use = self.dims
-    def add_reduced_dims_cache(data):
-      points = self.get_points(*dims_to_use)
+    points = self.get_points(*dims_to_use)
+    if method == 'tsne':
+      extra_points = calc_tsne(points)
+    else:
       from mlabwrap import mlab
       extra_points, mapping = mlab.compute_mapping(
           points, method, no_dims, *args, nout=2, **kargs)
-      if method.lower() in ['isomap', 'lle']:
-        # we need to convert the index array from matlab to python (and remember
-        # that python is 0-based and not 1-based)
-        indices = np.subtract(mapping.conn_comp.T[0].astype('int'), 1)
-        old_data = self.data[indices,:]
-      else:
-        old_data = self.data
-      new_data = np.concatenate((old_data, extra_points), axis=1)
-      if name_for_dim:
-        name = name_for_dim
-      else:
-        name = method
-        
-      extra_dims = ['%s%d' % (name, i) for i in xrange(no_dims)]
-      new_dims = self.dims + extra_dims
-      data.new_table = DataTable(new_data, new_dims)
-    global services
-    data = services.cache((self, method, no_dims, dims_to_use, args, kargs), add_reduced_dims_cache)
-    return data.new_table
+    if method.lower() in ['isomap', 'lle']:
+      # we need to convert the index array from matlab to python (and remember
+      # that python is 0-based and not 1-based)
+      indices = np.subtract(mapping.conn_comp.T[0].astype('int'), 1)
+      old_data = self.data[indices,:]
+    else:
+      old_data = self.data
+    new_data = np.concatenate((old_data, extra_points), axis=1)
+    extra_dims = ['%s%d' % (method, i) for i in xrange(no_dims)]
+    new_dims = self.dims + extra_dims
+    return DataTable(new_data, new_dims)
     
   def remove_bad_cells(self, *dims):
     ranges = [DimRange(d, 0, np.inf) for d in dims]
     return self.gate(*ranges)
-    
+
+  @cache('not_so_random_samples')
   def random_sample(self, n):
     def random_sample_cache(data):
       indices = random.sample(xrange(np.shape(self.data)[0]), n)
@@ -302,40 +303,41 @@ class DataTable(AutoReloader):
     data = services.cache((self, n), random_sample_cache)
     return data.table
   
-  def get_mutual_information(self, ignore_negative_values=True):
-    def cache(data):
-      from mlabwrap import mlab
-      bad_dims = self.get_markers('surface_ignore')
-      bad_dims.append('Cell Length')
-      bad_dims.append('Time')
-      bad_dims.append('191-DNA')
-      bad_dims.append('cluster_name')
-      bad_dims.append('stim')
-      bad_dims.append('cluster_num')
+  @cache('mutual_information_tables')
+  def get_mutual_information(self, dims_to_use=None, ignore_negative_values=True):
+    from mlabwrap import mlab
+    bad_dims = self.get_markers('surface_ignore')
+    bad_dims.append('Cell Length')
+    bad_dims.append('Time')
+    bad_dims.append('191-DNA')
+    bad_dims.append('193-DNA')
+    bad_dims.append('103-Viability')
+    bad_dims.append('cluster_name')
+    bad_dims.append('stim')
+    bad_dims.append('cluster_num')
+    if not dims_to_use:
       dims_to_use = self.dims[:]
-      dims_to_use = [d for d in dims_to_use if not d in bad_dims]    
-      num_dims = len(dims_to_use)
-      res = np.zeros((num_dims, num_dims))
-      logging.info(
-          'Calculating mutual information for %d pairs...' % ((num_dims ** 2 - num_dims) / 2))
-      timer = MultiTimer((num_dims ** 2 - num_dims) / 2)
-      for i in xrange(num_dims):
-        for j in xrange(i):
-          arr = self.get_points(dims_to_use[i], dims_to_use[j])
-          if ignore_negative_values:
-            arr = arr[np.all(arr > 0, axis=1)]
-            if arr.shape[0] < 100:
-              logging.warning('Less than 100 cells in MI calculation for (%s, %s)' % (dims_to_use[i], dims_to_use[j]))
-              res[j,i] = 0
-              res[i,j] = 0
-              continue
-          #print arr.shape
-          res[i,j] = mlab.mutualinfo_ap(arr, nout=1)
-          res[j,i] = 0
-          timer.complete_task('%s, %s' % (dims_to_use[i], dims_to_use[j]))
-      data.res = DataTable(res, dims_to_use)
-    data = services.cache((self,ignore_negative_values), cache)
-    return data.res
+    dims_to_use = [d for d in dims_to_use if not d in bad_dims]    
+    num_dims = len(dims_to_use)
+    res = np.zeros((num_dims, num_dims))
+    logging.info(
+        'Calculating mutual information for %d pairs...' % ((num_dims ** 2 - num_dims) / 2))
+    timer = MultiTimer((num_dims ** 2 - num_dims) / 2)
+    for i in xrange(num_dims):
+      for j in xrange(i):
+        arr = self.get_points(dims_to_use[i], dims_to_use[j])
+        if ignore_negative_values:
+          arr = arr[np.all(arr > 0, axis=1)]
+          if arr.shape[0] < 100:
+            logging.warning('Less than 100 cells in MI calculation for (%s, %s)' % (dims_to_use[i], dims_to_use[j]))
+            res[j,i] = 0
+            res[i,j] = 0
+            continue
+        #print arr.shape
+        res[i,j] = mlab.mutualinfo_ap(arr, nout=1)
+        res[j,i] = 0
+        timer.complete_task('%s, %s' % (dims_to_use[i], dims_to_use[j]))
+    return DataTable(res, dims_to_use)
     
   
   #def get_vectors(self, *dims):

@@ -1,5 +1,7 @@
 <div id="{{ id }}" class="expand_box">
+{% if main_title %}
 <h2>{{ main_title }}</h2>
+{% endif %}
 {% for item in items %}
   <h3 class="expand"> {{ item.0|safe }} </h3>
   <div class="collapse"> {{ item.1|safe }} </div>

@@ -60,7 +60,7 @@ class View(object):
     self.css_files = set(css_files)
     self.js_files = set(js_files)
     self.images = images
-    
+      
   def append_view(self, other_view):
     self.main_html += other_view.main_html
     self.append_view_files(other_view)
@@ -71,6 +71,11 @@ class View(object):
     self.images.update(other_view.images)
     
   def create_page(self):
+    for filename, img in self.images.iteritems():
+      full_filename = os.path.join(settings.FREECELL_DIR, 'static', 'images', filename)
+      with open(full_filename, 'wb') as f:
+        f.write(img)
+
     c = Context({
         'css': self.css_files,
         'js': self.js_files,
