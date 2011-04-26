@@ -7,8 +7,8 @@ from biology.dataindex import DataIndex
 from django.utils.html import linebreaks
 
 class Expander(Widget):
-  def __init__(self):
-    Widget.__init__(self)
+  def __init__(self, id, parent):
+    Widget.__init__(self, id, parent)
    
   def view(self, main_title, collapsed, expanded):
     collapsed_html, collapsed_views  = convert_to_html(collapsed)

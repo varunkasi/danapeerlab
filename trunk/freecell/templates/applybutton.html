@@ -1,0 +1,10 @@
+﻿<button id="{{ id }}"> Apply</button>
+<script type="text/javascript">
+$(document).ready(function(){
+	$("#{{ id }}").button();
+  $("#{{ id }}").click(function() {
+    save("{{ widget_id }}");
+    window.location.reload();
+  });
+});
+</script>

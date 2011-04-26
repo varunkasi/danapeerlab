@@ -8,8 +8,8 @@ from biology.dataindex import DataIndex
 from django.utils.html import linebreaks
 
 class Table(Widget):
-  def __init__(self):
-    Widget.__init__(self)
+  def __init__(self, id, parent):
+    Widget.__init__(self, id, parent)
 
   def _int_format(value, decimal_points=3, seperator=u'.'):
     value = str(value)

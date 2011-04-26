@@ -125,7 +125,7 @@ def remove_ticks(ax):
   
 def kde2d_color_hist(
     fig, datatable, markers, range, norm_axis=None, norm_axis_thresh = None, res=256):
-  ax_main = fig.add_subplot(111)
+  ax_main = fig.add_subplot(111, axisbg=cm.jet(0))
   #ax_main.set_aspect(1.)
   divider = make_axes_locatable(ax_main)
   ax_hist_x = divider.append_axes("top", 0.1, pad=0, sharex=ax_main)
@@ -207,6 +207,9 @@ def kde2d(
   image = ax.imshow(display_data, extent=extent, origin='lower')
   #ax.figure.colorbar(image)
   ax.set_aspect('auto')
+  ax.set_xlim(-1,6)
+  ax.set_ylim(-1,6)
+
   return density, X, Y
 
 def kde2d_data(

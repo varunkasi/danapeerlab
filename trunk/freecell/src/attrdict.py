@@ -9,11 +9,14 @@ class AttrDict(dict):
 		dict.__init__(self, init)
 
 	def __getstate__(self):
-		return self.__dict__.items()
+		#print self.items()
+		return self.items()
 
-	def __setstate__(self, items):
-		for key, val in items:
-			self.__dict__[key] = val
+	def __setstate__(self, state):
+		#print state
+		self.update(state)
+		#for key, val in items:
+		#	self.__dict__[key] = val
 
 	def __repr__(self):
 		return "%s(%s)" % (self.__class__.__name__, dict.__repr__(self))

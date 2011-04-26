@@ -14,6 +14,7 @@ from axes import kde2d
 from axes import new_axes
 from axes import new_figure
 from biology.datatable import fake_table
+import matplotlib.cm as cm
   
 class CorrelationReport(Widget):
   def __init__(self):
@@ -21,8 +22,11 @@ class CorrelationReport(Widget):
     self.widgets.kde2d_fig = Figure()
 
   def view(self):
+    #cluster = 'B-cells CD20+'
+    cluster = 'Progenitor cells CD38+'
+    stim='PVO4' #'All'
     index = DataIndex.load(r'c:\cytof54_clustered\cytof54.index')
-    t = index.load_table(cluster_name='CD8+ T-cells')
+    t = index.load_table(cluster_name=cluster, stim=stim)
     dims = t.get_markers('signal')
     width =  800
     height = 800
@@ -65,7 +69,7 @@ class CorrelationReport(Widget):
         table_positive = t.remove_bad_cells(dim1, dim2)
         y_pos = 1 - sub_height - top_space - i * sub_height
         x_pos = left_space + j * sub_width
-        ax = fig.add_axes((x_pos,y_pos, sub_width, sub_height))
+        ax = fig.add_axes((x_pos,y_pos, sub_width, sub_height), axisbg=cm.jet(0))
         #print ''
         #print (x_pos,y_pos, sub_width, sub_height)
         axes.kde2d(

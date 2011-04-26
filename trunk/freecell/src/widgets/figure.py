@@ -14,8 +14,8 @@ matplotlib.use('Agg')
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 class Figure(Widget):
-  def __init__(self):
-    Widget.__init__(self)
+  def __init__(self, id, parent):
+    Widget.__init__(self, id, parent)
     
   
   def view(self, fig, small_ticks=True):
@@ -24,11 +24,12 @@ class Figure(Widget):
         axes.small_ticks(ax)
     id = self._get_unique_id()
     image_filename = '%s.png' % id
-    full_filename = os.path.join(settings.FREECELL_DIR, 'static', 'images', image_filename)
-    #imgdata = StringIO.StringIO()
+    full_filename = os.path.join(settings.FREECELL_DIR, 'temp', image_filename)
     
     canvas = FigureCanvasAgg(fig)
     canvas.print_figure(full_filename, dpi=100)
+    with open(full_filename, 'rb') as f:
+      imgdata = f.read()     
     #with open(full_filename, 'w') as imgdata:
       #fig.savefig(imgdata, format='png')
       
@@ -38,5 +39,5 @@ class Figure(Widget):
       self,
       html,
       [],
-      [])
-      #{image_filename : imgdata})
+      [],
+      {image_filename : imgdata})

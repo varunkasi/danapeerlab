@@ -9,6 +9,7 @@
   <link rel="stylesheet" type="text/css" href="/static/css/{{ css_file }}" />    
   {% endfor %}
   <script type="text/javascript" src="/static/js/jquery-1.4.4.js"></script>
+  <script type="text/javascript" src="/static/js/freecell.js"></script>
   {% for js_file in js %}
 	<script type="text/javascript" src="/static/js/{{ js_file }}"></script>
   {% endfor %}
@@ -17,4 +18,3 @@
 <body>{{ main_html|safe }}</body>
 
 </html>
-

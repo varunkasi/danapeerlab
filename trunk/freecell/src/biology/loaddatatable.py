@@ -14,6 +14,53 @@ from biology.markers import marker_from_name
 from biology.markers import normalize_markers
 from biology.datatable import DataTable
 
+def get_num_events(filename):
+  """Extracts data from an fcs file. 
+  
+  based on code from
+  http://cyberaide.googlecode.com/svn/trunk/project/biostatistics/scripts/fcsextract.py
+  """
+  fcs_file_name = filename
+
+  fcs = open(fcs_file_name,'rb')
+  with fcs:
+    header = fcs.read(58)
+    version = header[0:6].strip()
+    text_start = int(header[10:18].strip())
+    text_end = int(header[18:26].strip())
+    data_start = int(header[26:34].strip())
+    data_end = int(header[34:42].strip())
+    analysis_start = int(header[42:50].strip())
+    analysis_end = int(header[50:58].strip())
+
+    #logging.info("Parsing TEXT segment")
+    # read TEXT portion
+    fcs.seek(text_start)
+    delimeter = fcs.read(1)
+    # First byte of the text portion defines the delimeter
+    #logging.info("delimeter:%s" % delimeter)
+    text = fcs.read(text_end-text_start+1)
+
+    #Variables in TEXT poriton are stored "key/value/key/value/key/value"
+    keyvalarray = text.split(delimeter)
+    fcs_vars = {}
+    fcs_var_list = []
+    # Iterate over every 2 consecutive elements of the array
+    for k,v in zip(keyvalarray[::2],keyvalarray[1::2]):
+        fcs_vars[k] = v
+        fcs_var_list.append((k,v)) # Keep a list around so we can print them in order
+
+    #from pprint import pprint; pprint(fcs_var_list)
+    if data_start == 0 and data_end == 0:
+        data_start = int(fcs_vars['$DATASTART'])
+        data_end = int(fcs_vars['$DATAEND'])
+
+    num_dims = int(fcs_vars['$PAR'])
+    #logging.info("Number of dimensions:%d" % num_dims)
+
+    num_events = int(fcs_vars['$TOT'])
+    return num_events
+
 def fcsextract(filename):
   """Extracts data from an fcs file. 
   
@@ -151,6 +198,7 @@ def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[]):
     dims = [marker_from_name(name) for name in dim_names]
     data = array(events)
     indices_to_transform = [i for i,n in enumerate(dims) if n.needs_transform]
+    #data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform] / 5)
     data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform])
     
     # add extra dims, data:

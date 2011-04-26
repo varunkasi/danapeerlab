@@ -1,0 +1,31 @@
+﻿{{ text }}
+{% if multiple %}
+<select id="{{ id }}_select" class="multiselect" multiple="multiple" style="width:460px; height:100px">
+{% else %}
+<select id="{{ id }}_select" size="1">
+{% endif %}
+{% for item in items %}
+{% if item.2 %}
+<option selected="selected" value="{{ item.0 }}">{{ item.1 }}</option>
+{% else %}
+<option value="{{ item.0 }}">{{ item.1 }}</option>
+{% endif %}
+{% endfor %}
+</select>
+<script type="text/javascript">
+$(document).ready(function(){
+	register_save("{{ saver_id }}", function() {
+    var selected = $("#{{ id }}_select option:selected");
+    var vals = []
+    for (var i=0; i < selected.length; i++) {
+      vals.push(selected[i].value);
+    }
+    set_value("{{ widget_id }}", "choices", vals);
+  });	
+});
+{% if multiple %}
+$(document).ready(function(){
+	$("#{{ id }}_select").multiselect();
+});
+{% endif %}
+</script>

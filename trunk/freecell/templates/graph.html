@@ -1,0 +1,31 @@
+﻿<div id="{{ id }}" class="graph">
+</div>
+
+<script type="text/javascript">
+$(document).ready(function() 
+  {
+    // id of Cytoscape Web container div
+    var div_id = "{{ id }}";
+    
+    // you could also use other formats (e.g. GraphML) or grab the network data via AJAX
+    var network_json = {
+        data: {
+            nodes: {{ nodes_json }},
+            edges: {{ edges_json }}
+        }
+    };
+    
+    // initialization options
+    var options = {
+        // where you have the Cytoscape Web SWF
+        swfPath: "/static/swf/CytoscapeWeb",
+        // where you have the Flash installer SWF
+        flashInstallerPath: "/static/swf/playerProductInstall"
+    };
+    
+    // init and draw
+    var vis = new org.cytoscapeweb.Visualization(div_id, options);
+    vis.draw({ network: network_json });
+  }
+);
+</script>
