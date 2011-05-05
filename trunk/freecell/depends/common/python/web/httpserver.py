@@ -237,6 +237,7 @@ class LogMiddleware:
         return self.app(environ, xstart_response)
              
     def log(self, status, environ):
+        return
         outfile = environ.get('wsgi.errors', web.debug)
         req = environ.get('PATH_INFO', '_')
         protocol = environ.get('ACTUAL_SERVER_PROTOCOL', '-')
