@@ -19,15 +19,54 @@ from expander import Expander
 from table import Table
 from biology.datatable import combine_tables
 from biology.datatable import DimRange
+from biology.markers import get_markers
+from populationpicker import PopulationPicker
+from select import Select
+from applybutton import ApplyButton
   
 class HistogramReport(Widget):
-  def __init__(self):
-    Widget.__init__(self)
+  def __init__(self, id, parent):
+    Widget.__init__(self, id, parent)
+    self._add_widget('histogram_table', HistogramTable)
+    self._add_widget('population_picker', PopulationPicker)
+    self._add_widget('dim_picker', Select)
+    self._add_widget('negative_values_picker', Select)
+    self._add_widget('apply', ApplyButton)
+  
+  def view(self):
+    if not self.widgets.population_picker.is_ready():
+      return self.widgets.population_picker.view()
+      
+    if not self.widgets.negative_values_picker.values.choices:
+      self.widgets.negative_values_picker.values.choices = ['remove']
+    
+    table = self.widgets.population_picker.get_data()
+    
+    return view.stack_lines(
+        self.widgets.population_picker.view(),
+        self.widgets.dim_picker.view(
+            'Dimension',
+            self.widgets.apply,
+            table.dims, True, [
+                ('Signal Markers', get_markers('signal')),
+                ('Surface Markers', get_markers('surface'))]),
+        self.widgets.negative_values_picker.view(
+            'Negative Values',
+            self.widgets.apply,
+            [('remove', 'Remove negative values'),
+             ('keep', 'Keep negative values')], False),
+        self.widgets.apply.view(),
+        self.widgets.histogram_table.view(
+            table,
+            self.widgets.dim_picker.values.choices,
+            'remove' in self.widgets.negative_values_picker.values.choices))
+            
+            
 
   
 class FitReport(Widget):
-  def __init__(self):
-    Widget.__init__(self)
+  def __init__(self, id, parent):
+    Widget.__init__(self, id, parent)
     self.widgets.expander = Expander()
     self.widgets.surface_table = FitTable()
     self.widgets.signal_table = FitTable()
@@ -53,14 +92,14 @@ class FitReport(Widget):
     #return self.widgets.dim_table.view(all_pairs_with_mi_sorted(t_mi)[:500], t, t_mi)
 
     
-class FitTable(Widget):
-  def __init__(self):
-    Widget.__init__(self)
-    self.widgets.table = Table()
-    self.widgets.kde1d_fig = Figure()
-    self.widgets.stat_table = Table()
+class HistogramTable(Widget):
+  def __init__(self, id, parent):
+    Widget.__init__(self, id, parent)
+    self._add_widget('table', Table)
+    self._add_widget('kde1d_fig', Figure)
+    self._add_widget('stat_table', Table)
 
-  def view(self, table, dims, remove_negative_values=True, size=200):
+  def view(self, table, dims, remove_negative_values=True, cluster=False, size=200):
     if table.num_cells < 10:
       return View(self, 'Not enough cells')
     lines = []
@@ -89,26 +128,27 @@ class FitTable(Widget):
       stats_view = self.widgets.stat_table.view(stat_table.dims, stat_table.data, True)
       line.append(view.stack_left(kde_view, stats_view))
           
-      # 4 - GMM
-      axes_clusters = new_axes(size,size)
-      ((cluster1, cluster2), llh) = positive_table.emgm((dim,), 2, auto_centers=True)
-      if cluster1.num_cells < 10 or cluster2.num_cells < 10:
-        line.append('Not enough cells in one of the clusters')
-      else:
-        try:
-          axes.kde1d(axes_clusters, cluster1, dim, norm = cluster1.num_cells / positive_table.num_cells)
-        except:
-          logging.exception('kde1d failed')
-        try:
-          axes.kde1d(axes_clusters, cluster2, dim, norm = cluster2.num_cells / positive_table.num_cells)
-        except:
-          logging.exception('kde1d failed')
-        combined_stats = combine_tables([cluster1.get_stats(dim), cluster2.get_stats(dim)])
-        line.append(
-            view.stack_left(
-                self.widgets.kde1d_fig.view(axes_clusters.figure),
-                self.widgets.stat_table.view(combined_stats.dims, combined_stats.data, True)))
-      line.append(llh)
+      if cluster:
+        # 4 - GMM
+        axes_clusters = new_axes(size,size)
+        ((cluster1, cluster2), llh) = positive_table.emgm((dim,), 2, auto_centers=True)
+        if cluster1.num_cells < 10 or cluster2.num_cells < 10:
+          line.append('Not enough cells in one of the clusters')
+        else:
+          try:
+            axes.kde1d(axes_clusters, cluster1, dim, norm = cluster1.num_cells / positive_table.num_cells)
+          except:
+            logging.exception('kde1d failed')
+          try:
+            axes.kde1d(axes_clusters, cluster2, dim, norm = cluster2.num_cells / positive_table.num_cells)
+          except:
+            logging.exception('kde1d failed')
+          combined_stats = combine_tables([cluster1.get_stats(dim), cluster2.get_stats(dim)])
+          line.append(
+              view.stack_left(
+                  self.widgets.kde1d_fig.view(axes_clusters.figure),
+                  self.widgets.stat_table.view(combined_stats.dims, combined_stats.data, True)))
+        line.append(llh)
       
       if False:
         #5 - KMEANS
@@ -120,10 +160,13 @@ class FitTable(Widget):
           axes.kde1d(axes_clusters, cluster2, dim, norm = cluster2.num_cells / positive_table.num_cells)
         line.append(self.widgets.kde1d_fig.view(axes_clusters.figure))
       
-      line.append('')
-      
       lines.append(line)
       timer.complete_task(dim)
+    
+    if cluster:
+      titles = ['Dimension', 'Histogram', 'Gaussian Mixture','GM Log likelihood 2 clusters']
+    else:
+      titles = ['Dimension', 'Histogram']
     return self.widgets.table.view(
-        ['Dimension', 'Histogram', 'Gaussian Mixture','GM Log likelihood 2 clusters',  'K-Means'], 
+        titles, 
         lines, None, [('Dimension', 'asc')])

@@ -1,17 +1,35 @@
-﻿{{ text }}
-{% if multiple %}
-<select id="{{ id }}_select" class="multiselect" multiple="multiple" style="width:460px; height:100px">
-{% else %}
-<select id="{{ id }}_select" size="1">
+﻿<b>{{ text }}</b><br />
+<select id="{{ id }}_select" class="multiselect" {% if multiple %}multiple="multiple"{% endif %}>
+{% for group, group_items in items %}
+{% if group != "None" %}
+<optgroup label="{{ group }}">
 {% endif %}
-{% for item in items %}
+{% for item in group_items %}
 {% if item.2 %}
 <option selected="selected" value="{{ item.0 }}">{{ item.1 }}</option>
 {% else %}
 <option value="{{ item.0 }}">{{ item.1 }}</option>
 {% endif %}
 {% endfor %}
+{% if group != "None" %}
+</optgroup>
+{% endif %} 
+{% endfor %}
 </select>
+{% for group in groups %}
+<button id="{{ id }}_group_{{ forloop.counter }}">{{ group.0 }}</button>
+<script type="text/javascript">
+$(document).ready(function(){
+	$("#{{ id }}_group_{{ forloop.counter }}").button();
+  $("#{{ id }}_group_{{ forloop.counter }}").click(function() {
+    {% for val in group.1 %}
+        $("#{{ id }}_select").find("[value={{ val }}]").attr("selected", "selected");
+    {% endfor %}
+    $("#{{ id }}_select").multiselect('refresh');
+  });
+});
+</script>
+{% endfor %}
 <script type="text/javascript">
 $(document).ready(function(){
 	register_save("{{ saver_id }}", function() {
@@ -23,9 +41,27 @@ $(document).ready(function(){
     set_value("{{ widget_id }}", "choices", vals);
   });	
 });
-{% if multiple %}
 $(document).ready(function(){
-	$("#{{ id }}_select").multiselect();
-});
+	$("#{{ id }}_select").multiselect({
+      minWidth: 300,
+      height: "auto",
+      checkAllText: "Select Any",
+      uncheckAllText: "Select None",
+      noneSelectedText: "None",
+      selectedList: 5,
+      selectedText: function(checked, total, arr) {
+          if (checked == total) {
+            return "Any";
+          }
+          arr = jQuery.map(arr, function (obj) { return obj.title; });
+          return arr.join(", ");
+      },
+{% if multiple %}
+      multiple: true
+{% else %}
+      multiple: false
 {% endif %}
+  });
+});
+
 </script>

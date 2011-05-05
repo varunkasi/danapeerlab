@@ -1,0 +1,44 @@
+﻿<script type="text/javascript">
+$(document).ready(function () {
+    if (typeof(x_data_to_pixel_{{ figure_id_func }}) == "undefined") {
+      return;
+    }
+    var update_from_inputs = function() {
+      var min_x = x_data_to_pixel_{{ figure_id_func }}($('#{{ min_x_id }}').attr('value'));
+      var max_x = x_data_to_pixel_{{ figure_id_func }}($('#{{ max_x_id }}').attr('value'));
+      var min_y = y_data_to_pixel_{{ figure_id_func }}($('#{{ min_y_id }}').attr('value'));
+      var max_y = y_data_to_pixel_{{ figure_id_func }}($('#{{ max_y_id }}').attr('value'));
+      var ias = $('#{{ figure_id }}').imgAreaSelect({ instance: true });
+      ias.setSelection(min_x, max_y, max_x, min_y, true);
+      setTimeout("var ias = $('#{{ figure_id }}').imgAreaSelect({ instance: true });ias.update();", 500);
+    };
+    
+    $('#{{ figure_id }}').imgAreaSelect({
+        min_x: x_data_to_pixel_{{ figure_id_func }}({{ min_x }}),
+        max_x: x_data_to_pixel_{{ figure_id_func }}({{ max_x }}),
+        min_y: y_data_to_pixel_{{ figure_id_func }}({{ max_y }}),
+        max_y: y_data_to_pixel_{{ figure_id_func }}({{ min_y }}),
+        parent: $('#{{ figure_id }}'),
+        handles: true,
+        show: true,
+        onInit: update_from_inputs,
+        onSelectChange: function(img, selection) {
+          var min_x = x_pixel_to_data_{{ figure_id_func }}(selection.x1);
+          var max_x = x_pixel_to_data_{{ figure_id_func }}(selection.x2);
+          var min_y = y_pixel_to_data_{{ figure_id_func }}(selection.y2);
+          var max_y = y_pixel_to_data_{{ figure_id_func }}(selection.y1);
+          $('#{{ min_x_id }}').attr('value', min_x.toFixed(2));
+          $('#{{ max_x_id }}').attr('value', max_x.toFixed(2));
+          $('#{{ min_y_id }}').attr('value', min_y.toFixed(2));
+          $('#{{ max_y_id }}').attr('value', max_y.toFixed(2));
+        }
+    });
+
+    $('#{{ min_x_id }}').change(update_from_inputs);
+    $('#{{ max_x_id }}').change(update_from_inputs);
+    $('#{{ min_y_id }}').change(update_from_inputs);
+    $('#{{ max_y_id }}').change(update_from_inputs);
+    
+    //update_from_inputs();
+});
+</script>

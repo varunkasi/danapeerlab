@@ -124,9 +124,10 @@ def fcsextract(filename):
     endian = '>'
     fcs_vars['$CREATOR'] = fcs_vars['CREATOR']
     fcs_vars['$FCSversion'] = fcs_vars['FCSversion']
-    fcs_vars['$FILENAME'] = fcs_vars['FILENAME']
-    fcs_vars['$data'] = fcs_vars['temp']
-    del fcs_vars['temp']
+    fcs_vars['$FILENAME'] = fcs_vars['FILENAME']   
+    #print [k for k in fcs_vars.keys() if k[0]!='$']
+    #fcs_vars['$data'] = fcs_vars['temp']
+    #del fcs_vars['temp']
     del fcs_vars['CREATOR']
     del fcs_vars['FCSversion']
     del fcs_vars['FILENAME']
@@ -191,13 +192,15 @@ def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[]):
       logging.error('File %s is empty' % filename)
       return None
     num_dims = len(events[0])
-    if is_peng:
-      dim_names = [fcs_vars["$P%dR"%(i+1)] for i in xrange(num_dims)]
-    else:
-      dim_names = [fcs_vars["$P%dS"%(i+1)] for i in xrange(num_dims)]
+    #if is_peng:
+    #  dim_names = [fcs_vars["$P%dR"%(i+1)] for i in xrange(num_dims)]
+    #  print dim_names
+    #else:
+    dim_names = [fcs_vars["$P%dS"%(i+1)] for i in xrange(num_dims)]
     dims = [marker_from_name(name) for name in dim_names]
+    dim_names = [str(dim) for dim in dims]
     data = array(events)
-    indices_to_transform = [i for i,n in enumerate(dims) if n.needs_transform]
+    indices_to_transform = [i for i,n in enumerate(dims) if n and n.needs_transform]
     #data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform] / 5)
     data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform])
     

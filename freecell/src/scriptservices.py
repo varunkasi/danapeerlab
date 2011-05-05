@@ -4,7 +4,7 @@ import hashlib
 import os
 import logging
 import settings
-import pickle
+import cPickle as pickle
 import sys
 import types
 import inspect

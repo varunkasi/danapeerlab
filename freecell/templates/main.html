@@ -4,11 +4,13 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<title>FreeCell | Population Report</title>
-  <link rel="stylesheet" type="text/css" href="/static/css/main.css" />    
+  <link rel="stylesheet" type="text/css" href="/static/css/main.css" />
+  <link rel="stylesheet" type="text/css" href="/static/css/ui-lightness/jquery-ui-1.8.11.custom.css" /> 
 	{% for css_file in css %}
   <link rel="stylesheet" type="text/css" href="/static/css/{{ css_file }}" />    
   {% endfor %}
   <script type="text/javascript" src="/static/js/jquery-1.4.4.js"></script>
+	<script type="text/javascript" src="/static/js/jquery-ui-1.8.11.custom.min.js"></script>
   <script type="text/javascript" src="/static/js/freecell.js"></script>
   {% for js_file in js %}
 	<script type="text/javascript" src="/static/js/{{ js_file }}"></script>

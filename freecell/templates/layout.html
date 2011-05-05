@@ -1,0 +1,26 @@
+<div id="{{ id }}">
+{% if center_html %}
+	<div id="{{ id }}_center" class="pane ui-layout-center">{{ center_html|safe }}</div>
+{% endif %}  
+{% if north_html %}
+	<div class="pane ui-layout-north">{{ north_html|safe }}</div>
+{% endif %}  
+{% if south_html %}
+	<div class="pane ui-layout-south">{{ south_html|safe }}</div>
+{% endif %}  
+{% if east_html %}
+	<div class="pane ui-layout-east">{{ east_html|safe }}</div>
+{% endif %}  
+{% if west_html %}
+	<div class="pane ui-layout-west">{{ west_html|safe }}</div>
+{% endif %}  
+</div>
+
+<script type="text/javascript">
+$(document).ready(function() 
+    { 
+        $("#{{ id }}").css("height", ($("#{{ id }}_center").height()+"px");
+        $("#{{ id }}").layout();
+    }
+);
+</script>

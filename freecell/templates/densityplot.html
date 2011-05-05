@@ -1,0 +1,25 @@
+﻿<script type="text/javascript">
+$(document).ready(function () {
+    $('#{{ fig_id }}').imgAreaSelect({
+        handles: true,
+        onSelectChange: function(img, selection) {
+          var min_x = x_pixel_to_data_{{ fig_id }}(selection.x1);
+          var max_x = x_pixel_to_data_{{ fig_id }}(selection.x2);
+          var min_y = y_pixel_to_data_{{ fig_id }}(selection.y2);
+          var max_y = y_pixel_to_data_{{ fig_id }}(selection.y1);
+          $('#{{ gate_min_x_id }}').attr('value', min_x);
+          $('#{{ gate_max_x_id }}').attr('value', max_x);
+          $('#{{ gate_min_y_id }}').attr('value', min_y);
+          $('#{{ gate_max_y_id }}').attr('value', max_y);
+        }
+    });
+    var ias = $('#{{ fig_id }}').imgAreaSelect({ instance: true });
+    var min_x = x_data_to_pixel_{{ fig_id }}({{ gate_min_x }});
+    var max_x = x_data_to_pixel_{{ fig_id }}({{ gate_max_x }});
+    var min_y = y_data_to_pixel_{{ fig_id }}({{ gate_min_y }});
+    var max_y = y_data_to_pixel_{{ fig_id }}({{ gate_max_y }});    
+    ias.setSelection(min_x, max_y, max_x, min_y, true);
+    ias.setOptions({ show: true });
+    ias.update();
+});
+</script>

@@ -155,6 +155,8 @@ $.fn.toggler = function(options) {
       if ($this.next('div.shown').length) { $this.closest(container).find('.shown').show().prev().find('a').addClass('open'); }
       $(this).click(function() {
         $(this).find('a').toggleClass('open').end().next(o.cllpsEl)[o.method](o.speed);
+          setTimeout('$(window).resize();', 1000);
+
         return false;
     });
 });};

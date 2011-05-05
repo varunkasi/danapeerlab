@@ -9,15 +9,17 @@ from django.utils.html import linebreaks
 class Expander(Widget):
   def __init__(self, id, parent):
     Widget.__init__(self, id, parent)
-   
-  def view(self, main_title, collapsed, expanded):
-    collapsed_html, collapsed_views  = convert_to_html(collapsed)
-    expanded_html, expanded_views  = convert_to_html(expanded)
+    self.values.shown = 'shown'
+
+  
+  def view(self, collapsed_view, expanded_view):
     html = render('expander.html', {
+        'widget_id' : self.id,
         'id' : self._get_unique_id(),
-        'main_title' : main_title,
-        'items' : zip(collapsed_html, expanded_html)})
-    v = View(self, html, ['expander.css'], ['expand.js'])
-    for sub in (collapsed_views + expanded_views):     
-      v.append_view_files(sub)
+        'collapsed' : collapsed_view.main_html,
+        'expanded' : expanded_view.main_html,
+        'shown' : self.values.shown == 'shown'})
+    v = View(self, html, ['expander.css'], [])
+    v.append_view_files(collapsed_view)
+    v.append_view_files(expanded_view)
     return v
