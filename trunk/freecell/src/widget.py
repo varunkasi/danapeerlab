@@ -21,7 +21,12 @@ class Widget(object):
 #        'widgets': self.__dict__['widgets'],
 #        'values' : self.__dict__['values']}
         
-  
+  def has_method(self, name):
+    return name in dir(self) and callable(getattr(self, name))
+
+  def set_default(self, name, val):
+    if name in self.values and self.values[name] == None:
+      self.set_value(name, val)
   def set_value(self, name, val):
     self.values[name] = val
 #    if name in self.on_set_values:
@@ -32,14 +37,14 @@ class Widget(object):
 #    self.on_set_values[name] = func
          
   def _normalize_id(self, id):
-    return id.replace(' ', '_')
+    return id.replace(' ', '').replace('-','')
 
   def _add_widget(self, name, new_widget_type, *args, **kargs):
     name = self._normalize_id(name)
     if name in self.widgets:
       raise Exception('name %s is already in use')
     new_id = '%s%s%s' % (self.id, ID_SEPERATOR, name)
-    new_widget = new_widget_type(new_id, self, *args, **kargs)
+    new_widget = new_widget_type(new_id, self, *args, **kargs)   
     self.widgets[name] = new_widget
     return new_widget
   

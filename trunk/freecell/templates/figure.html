@@ -1,0 +1,23 @@
+﻿<div id= {{ id }}>
+<img src="/static/images/{{ id }}.png"  />
+</div>
+<script type="text/javascript">
+function x_pixel_to_data_{{ id_function }}(pixel_x) {
+  return {{ a_data_x }} * pixel_x + {{b_data_x}};
+};
+
+function y_pixel_to_data_{{ id_function }}(pixel_y) {
+  pixel_y = {{ pixel_height }} - pixel_y;
+  return {{ a_data_y }} * pixel_y + {{b_data_y}};
+};
+
+function x_data_to_pixel_{{ id_function }}(data_x) {
+  return {{ a_pixel_x }} * data_x + {{b_pixel_x}};
+};
+
+function y_data_to_pixel_{{ id_function }}(data_y) {
+  var pixel_y = {{ a_pixel_y }} * data_y + {{b_pixel_y}};
+  pixel_y = {{ pixel_height }} - pixel_y;
+  return pixel_y;
+};
+</script>

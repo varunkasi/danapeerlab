@@ -3,6 +3,9 @@ FREECELL_DIR = r'c:\Projects\svn\danapeerlab\freecell'
 MATLAB_PATH = r'C:\Program Files\MATLAB\R2010b'
 MATLAB_VERSION='2010' #supportd on winxp: 2010, 7. supported on osx: 2010
 EXPERIMENTS = {
+    'AML with T-Sne data' : (
+        r'Z:\dani\aml_tsne\aml.index',
+        ['patient']),
     'cytof54 elad clustering' : (
         r'Z:\dani\cytof54_clustered_elad\cytof54.index',
         ['cluster_name', 'stim']),

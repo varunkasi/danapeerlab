@@ -201,8 +201,14 @@ class DataTable(AutoReloader):
     ret.properties['original_table'] = self
     return ret
     
+  def get_markers_not_in_groups(self, *groups):
+    return [d for d in self.dims if not marker_from_name(d) or not marker_from_name(d).group in groups] 
+
   def get_markers(self, group):
-    return [d for d in self.dims if marker_from_name(d) and marker_from_name(d).group == group] 
+    if group:
+      return [d for d in self.dims if marker_from_name(d) and marker_from_name(d).group == group] 
+    else:
+      return [d for d in self.dims if not marker_from_name(d)] 
   
   def get_cols(self, *dims):
     return self.get_points(*dims).T
@@ -227,16 +233,15 @@ class DataTable(AutoReloader):
     return DataTable(self.data[new_indices], self.dims)
     
   def gate(self, *dim_ranges):
-    def gate_cache(data):
-      relevant_data = self.get_points(*[r.dim for r in dim_ranges])
-      mins = np.array([r.min for r in dim_ranges])
-      maxes = np.array([r.max for r in dim_ranges])
-      test1 = np.alltrue(relevant_data >= mins, axis=1)
-      test2 = np.alltrue(relevant_data <= maxes, axis=1)
-      final = np.logical_and(test1, test2)
-      data.table = DataTable(self.data[final], self.dims)
-    data = services.cache((self, dim_ranges), gate_cache)
-    return data.table
+    relevant_data = self.get_points(*[r.dim for r in dim_ranges])
+    mins = np.array([r.min for r in dim_ranges])
+    maxes = np.array([r.max for r in dim_ranges])
+    test1 = np.alltrue(relevant_data >= mins, axis=1)
+    test2 = np.alltrue(relevant_data <= maxes, axis=1)
+    final = np.logical_and(test1, test2)
+    print 'gated'
+    return DataTable(self.data[final], self.dims)
+
     
   def windowed_medians(self, progression_dim, window_size=1000, overlap=500):
     window_size = int(window_size)

@@ -1,10 +1,15 @@
-﻿<button id="{{ id }}"> Apply</button>
+﻿<button id="{{ id }}">{{ text }}</button>
 <script type="text/javascript">
 $(document).ready(function(){
+	register_save("{{ widget_id }}", function() {
+    set_value("{{ widget_id }}", "clicked", "True");
+  });
 	$("#{{ id }}").button();
   $("#{{ id }}").click(function() {
-    save("{{ widget_id }}");
-    window.location.reload();
+    if (validate("{{ widget_id }}")) {
+      save("{{ widget_id }}");
+      window.location.reload();
+    }
   });
 });
 </script>

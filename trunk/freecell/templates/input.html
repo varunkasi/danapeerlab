@@ -1,0 +1,32 @@
+﻿<b>{{ text }}</b><br />
+<input type="text" name="{{ id }}" id="{{ id }}" value="{{ value }}" />
+{% for group in predefined_values %}
+<button id="{{ id }}_group_{{ forloop.counter }}">{{ group.0 }}</button>
+<script type="text/javascript">
+$(document).ready(function(){
+	$("#{{ id }}_group_{{ forloop.counter }}").button();
+  $("#{{ id }}_group_{{ forloop.counter }}").click(function() {
+      $("#{{ id }}").attr("value", "{{ group.1 }}");
+      $("#{{ id }}").change();
+  });
+});
+</script>
+{% endfor %}
+<script type="text/javascript">
+$(document).ready(function(){
+	register_save("{{ saver_id }}", function() {
+    var val = $("#{{ id }}").attr("value");
+    set_value("{{ widget_id }}", "value", val);
+  });
+{% if numeric_validation %}	
+	register_validate("{{ saver_id }}", function() {
+    var val = $("#{{ id }}").attr("value");
+    if (isNaN(val)) {
+      alert("Value for {{ text }} has to be numeric.");
+      return false;
+    }
+    return true;
+  });
+{% endif %}
+});
+</script>

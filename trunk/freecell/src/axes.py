@@ -4,14 +4,12 @@ from matplotlib.figure import Figure
 from scriptservices import services 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.cm as cm
-
+DPI = 100
 
 def new_axes(x_size=256, y_size=256):
-  DPI = 100
   return Figure(figsize=(x_size / DPI, y_size / DPI)).add_subplot(111)
 
 def new_figure(x_size=256, y_size=256):
-  DPI = 100
   return Figure(figsize=(x_size / DPI, y_size / DPI))
 
 def small_ticks(ax):
@@ -67,7 +65,7 @@ def scatter(
   
   
 def scatter2(ax, datatable, markers, range=None, color_marker=None,
-    min_cells_per_bin=1,no_bins=512j):
+    min_cells_per_bin=1,no_bins=256j):
   def cached(data):
     cols = datatable.get_cols(*markers)
     if not range:
@@ -92,8 +90,10 @@ def scatter2(ax, datatable, markers, range=None, color_marker=None,
           [
               np.r_[fixed_range[0]:fixed_range[2]:no_bins], 
               np.r_[fixed_range[1]:fixed_range[3]:no_bins]], None, False, weights)
-      data.colored_hist = np.multiply(
-          np.true_divide(weighted_hist, hist), data.final_hist)
+      averages = np.true_divide(weighted_hist, hist)
+      averages[np.isnan(averages)] = np.NaN
+      averages[data.final_hist == 0] = np.NaN
+      data.colored_hist = averages
     else:
       data.is_colored = False
   data = services.cache((datatable, markers, range, color_marker), cached)  
@@ -112,7 +112,11 @@ def scatter2(ax, datatable, markers, range=None, color_marker=None,
   ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
   ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
   ax.figure.subplots_adjust(bottom=0.15)
-  ax.figure.colorbar(image)
+  cbar = ax.figure.colorbar(image)
+  if color_marker:
+    cbar.set_label(color_marker, fontsize='xx-small')
+    #label = cbar.get_label()
+    #label.set_fontsize('xx-small')
   ax.set_aspect('auto')
   return ax
 
@@ -207,8 +211,8 @@ def kde2d(
   image = ax.imshow(display_data, extent=extent, origin='lower')
   #ax.figure.colorbar(image)
   ax.set_aspect('auto')
-  ax.set_xlim(-1,6)
-  ax.set_ylim(-1,6)
+  #ax.set_xlim(-1,6)
+  #ax.set_ylim(-1,6)
 
   return density, X, Y
 
@@ -217,8 +221,7 @@ def kde2d_data(
   def cached(data):
     from mlabwrap import mlab
     a, w = datatable.get_cols(markers[0], markers[1])
-    if range:
-      min_a = range[0]
+    if range:     
       min_a = range[0]
       max_a = range[2]
       min_w = range[1]

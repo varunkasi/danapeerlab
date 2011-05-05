@@ -1,0 +1,6 @@
+<h1> Welcome to Freecell!</h1>
+<h2> What report would you like to create?</h2>
+{% for report in reports %}
+<h3> <a href="new_report?template={{ report.type }}">{{ report.name }}</a></h3>
+<h4> {{ report.description }} </h4>
+{% endfor %}

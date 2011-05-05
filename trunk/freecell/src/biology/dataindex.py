@@ -34,10 +34,11 @@ class DataIndexEntry:
   def load(idx, lines):
     assert len(lines) > 0
     assert not lines[idx].startswith('\t')
+    assert not lines[idx].startswith('  ')
     filename = lines[idx].strip()
     idx += 1
     tags = OrderedDict()
-    while idx < len(lines) and lines[idx].startswith('\t'):
+    while idx < len(lines) and (lines[idx].startswith('\t') or lines[idx].startswith('  ')):
       if ':' in lines[idx]:
         splitted = lines[idx].split(':')
         tag_key = splitted[0].strip()
@@ -113,7 +114,7 @@ class DataIndex(object):
     tables_to_load = [t for t in tables_to_load if t]
     return combine_tables(tables_to_load)
   
-  @cache('data tables')
+  #@cache('data tables')
   def load_table(self, *args, **kargs):
     return self._count_load_table(False, *args, **kargs)
 

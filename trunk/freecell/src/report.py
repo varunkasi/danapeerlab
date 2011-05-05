@@ -1,4 +1,5 @@
 ﻿import os
+import logging
 import cPickle as pickle
 import settings
 import threading
@@ -8,8 +9,9 @@ from widgets.population_report import PopulationReport
 from widgets.histogram_report import HistogramReport
 from widgets.correlation_report import CorrelationReport
 from widgets.population_report import SlicesReport
+from widgets.chain import Chain
 
-TEMPLATES = [PopulationReport, HistogramReport, CorrelationReport, SlicesReport]
+TEMPLATES = [PopulationReport, HistogramReport, CorrelationReport, SlicesReport, Chain]
 
 
 
@@ -65,17 +67,17 @@ class ReportManager(object):
   def save(self, report):
     with open(self.id_to_path(report.id), 'w') as f:
       pickle.dump(report, f)
-    print '****SAVED****'
-    print str(report.widget)
-    print '****SAVED****'
+    #print '****SAVED****'
+    #print str(report.widget)
+    #print '****SAVED****'
   
   def load(self, id):
     filename = self.check(id)
     with open(filename, 'r') as f:
       r = pickle.load(f)
-    print '****LOADED****'
-    print str(r.widget)
-    print '****LOADED****'
+    #print '****LOADED****'
+    #print str(r.widget)
+    #print '****LOADED****'
     return r 
 
   def check(self, id):
@@ -103,6 +105,7 @@ class Report(object):
     return widget
 
   def set_value(self, widget_id, key, val):
+    logging.info('setting value for widget %s. %s=%s' % (widget_id, key, val))
     widget = self.widget_from_id(widget_id)
     widget.set_value(key, val)
     #print widget_id

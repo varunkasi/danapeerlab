@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from depends import fix_path
+print 'Fixing Path'
 fix_path(True)
+print 'Done'
 import matplotlib
 matplotlib.use('Agg')
 import logging
@@ -15,6 +17,8 @@ from widgets.population_report import PopulationReport
 from widgets.histogram_report import HistogramReport
 from widgets.correlation_report import CorrelationReport
 from widgets.population_report import SlicesReport
+from widgets.chain import Chain
+print 'done imports'
 urls = (
     '/', 'Main',
     '/new_report', 'NewReport', 
@@ -31,7 +35,21 @@ class Main:
       pass
       
     def GET(self):
-      return ''
+      from view import render
+      from view import View
+      
+      reports = [
+          {'name': 'Population Report',
+           'type': 'PopulationReport',
+           'description': 'Blah blah blah'},
+          {'name': 'Histogram Report',
+           'type': 'HistogramReport',
+           'description': 'Blah blah blahsdfjasdk asdkf asdk asdj'},
+          {'name': 'Chain',
+           'type': 'Chain',
+           'description': 'Blah blah blah'}]
+      return View(None, render('welcome.html', {'reports' : reports})).create_page()
+
 
 class SetValue:
     def __init__(self):
@@ -41,10 +59,10 @@ class SetValue:
       with REPORTS.lock:
         i = web.input(**{'value[]':[]})
         r = REPORTS.load(i.report)
-        if 'value[]' in i:
-          r.set_value(i.widget, i.key, i['value[]'])
-        else:
+        if 'value' in i:
           r.set_value(i.widget, i.key, i.value)
+        else:
+          r.set_value(i.widget, i.key, i['value[]'])
         REPORTS.save(r)
         return 'ok'
       #print '***BEFORE SAVE***'
@@ -113,6 +131,7 @@ class Images:
             return view.images[name].read() # Notice 'rb' for reading images
         else:
             raise web.notfound()
+
 
 if __name__ == "__main__":
     # configuer logging for the application:

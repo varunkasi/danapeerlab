@@ -5,7 +5,7 @@ import settings
 import codecs
 import os
 
-def convert_to_html(sub_items):
+def convert_to_html(sub_items): 
   from django.utils.html import escape
   def _int_format(value, decimal_points=3, seperator=u'.'):
     value = str(value)
@@ -34,6 +34,21 @@ def convert_to_html(sub_items):
       cell_str = escape(str(item)).replace('\n', '<br />')
     converted.append(cell_str)
   return converted, sub_views
+
+def stack(*sub_items):  
+  html_items, sub_views = convert_to_html(sub_items)
+  html = ' '.join(html_items)
+  ret = View(None, html)
+  for v in sub_views:
+    ret.append_view_files(v)
+  return ret
+
+def left_right(left, right):  
+  html = render('left_right.html', {'left':left.main_html, 'right':right.main_html})
+  ret = View(None, html)
+  ret.append_view_files(left)
+  ret.append_view_files(right)
+  return ret
 
 def stack_left(*sub_items):  
   html_items, sub_views = convert_to_html(sub_items)

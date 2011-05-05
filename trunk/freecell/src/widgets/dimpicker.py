@@ -11,18 +11,16 @@ from widgets.expander import Expander
 from widgets.select import Select
 from widgets.applybutton import ApplyButton
 import settings
-   
-  
+
 class PopulationPicker(Widget):
   def __init__(self, id, parent):
     Widget.__init__(self, id, parent)
     self._add_widget('experiment_select', Select)
     self._add_widget('apply', ApplyButton)
-
+    self._add_widget('expander', Expander)
     self.experiment_to_widgets = {}
     self.experiment = None
     self.data = None
-    self.summary = "Population Picker"
 
   def _get_index(self):
     if not self.experiment:
@@ -32,13 +30,6 @@ class PopulationPicker(Widget):
     else:
       return DataIndex.load(settings.EXPERIMENTS[self.experiment])
       
-
-  def title(self):
-    return self.summary
-
-  def run(self, data):
-    data['table'] = self.get_data()
-
   def get_data(self, count=False):
     index = self._get_index()
     tag_to_vals = {}
@@ -59,7 +50,7 @@ class PopulationPicker(Widget):
     self.experiment = self.widgets.experiment_select.values.choices[0]
     
     if not self.experiment in self.experiment_to_widgets:
-      self.summary = 'Population Picker: Please select population for experiment %s' % self.experiment
+      self.summary = 'Please select population for experiment %s' % self.experiment
       return
       
     index = self._get_index()
@@ -72,13 +63,13 @@ class PopulationPicker(Widget):
       #if set(index.all_values_for_tag(w.tag)) == set(w.values.choices):
       #  return '%s: any' % w.tag
       #return '%s: %s' % (w.tag, ', '.join(w.values.choices))
-    self.summary = 'Population Picker: %s %s %d cells' % (
+    self.summary = 'Data: %s %s %d cells' % (
         self.experiment,
         ' '.join(
             [summary_from_widget(w, index) for w in self.experiment_to_widgets.get(self.experiment, [])]),
             self.get_data(True))
 
-  def view(self, data=None, enable_expander=False):
+  def view(self):
     experiments = settings.EXPERIMENTS.keys()
     if not self.experiment:
       return stack_lines(
@@ -100,7 +91,7 @@ class PopulationPicker(Widget):
       self.experiment_to_widgets[self.experiment] = widgets
     
     views = [w.view(w.tag, self.widgets.apply, w.vals) for w in self.experiment_to_widgets[self.experiment]]
-    stacked_views = stack_lines(*views)
+    stacked_views = stack_left(*views)
       
     expanded = stack_lines(
         self.widgets.experiment_select.view(
@@ -108,6 +99,5 @@ class PopulationPicker(Widget):
         stacked_views,
         View(None, '<p style="clear: both"></p>'),
         self.widgets.apply.view())
-    if not enable_expander:
-      return expanded
+    #return expanded
     return self.widgets.expander.view('',[self.summary], [expanded])
