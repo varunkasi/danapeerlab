@@ -54,7 +54,7 @@ class PopulationReport(Widget):
       t_mi = t_samp.get_mutual_information(
           t.get_markers('signal'),
           ignore_negative_values=truncate_cells_mi)
-      table = self.widgets.pair_table.view(all_pairs_with_mi_sorted(t_mi)[:5], t, t_mi)
+      table = self.widgets.pair_table.view(all_pairs_with_mi_sorted(t_mi)[:15], t, t_mi)
     elif self.widgets.population_picker.is_ready():
       table = 'Not enougth cells -- need at least 2000'
     else:

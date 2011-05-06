@@ -238,8 +238,7 @@ class DataTable(AutoReloader):
     maxes = np.array([r.max for r in dim_ranges])
     test1 = np.alltrue(relevant_data >= mins, axis=1)
     test2 = np.alltrue(relevant_data <= maxes, axis=1)
-    final = np.logical_and(test1, test2)
-    print 'gated'
+    final = np.logical_and(test1, test2)   
     return DataTable(self.data[final], self.dims)
 
     
