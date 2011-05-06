@@ -87,7 +87,7 @@ def normalize_markers(markers):
 
 def get_markers(*groups):
   global _name_to_marker
-  return [m.name for m in _name_to_marker.values() if m.group in groups]
+  return [m.names[0] for m in _name_to_marker.values() if m.group in groups]
   
 class Markers:  
   #FSC_A = register_marker('FSC-A')

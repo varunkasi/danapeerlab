@@ -41,13 +41,13 @@ class Main:
       reports = [
           {'name': 'Population Report',
            'type': 'PopulationReport',
-           'description': 'Blah blah blah'},
+           'description': 'Function plots for the 15 pairs with the highest mutual information.'},
           {'name': 'Histogram Report',
            'type': 'HistogramReport',
-           'description': 'Blah blah blahsdfjasdk asdkf asdk asdj'},
+           'description': '1D histograms for markers.'},
           {'name': 'Chain',
            'type': 'Chain',
-           'description': 'Blah blah blah'}]
+           'description': 'Create a custom chain.'}]
       return View(None, render('welcome.html', {'reports' : reports})).create_page()
 
 

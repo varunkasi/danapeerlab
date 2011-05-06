@@ -115,6 +115,6 @@ class Chain(Widget):
     widgets_view = stack_lines(*views)
     add_view = stack(
         self.widgets.new_widget_select.view(
-            'Add new widget', self.widgets.apply, zip(*CHAINABLE_WIDGETS)[0], False),
+            'Add new module', self.widgets.apply, zip(*CHAINABLE_WIDGETS)[0], False),
         self.widgets.apply.view())
     return stack_lines(widgets_view, add_view)
