@@ -27,9 +27,6 @@ class Select(Widget):
   def view(self, text, save_button, options, multiple=True, group_buttons=[], choices=None):
     def add_titles_if_needed(items):
       if items and type(items[0]) != tuple:
-        print 'yo'
-        print items
-        print 'yi'
         items = zip(items, items)
       return items
     
