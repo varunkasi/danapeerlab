@@ -212,7 +212,7 @@ class PairTable(Widget):
         line.append('')
       table_positive = table.remove_bad_cells(p[0], p[1])
       #table_positive = table
-      print 'Number of cells: %d' % table_positive.num_cells
+      print ' (%d cells)' % table_positive.num_cells
       if table_positive.num_cells > 100:
         fig = new_figure(300,300)
         axes.kde2d_color_hist(fig, table_positive, (p[0], p[1]), None, 'y', 0.001)       
