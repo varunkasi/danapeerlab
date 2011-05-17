@@ -31,7 +31,7 @@ class ProgressBar:
             if on_windows:
                 print self, '\r',
             else:
-                print self, chr(27) + '[A'
+                print self#, chr(27) + '[A'
             self.update_time(i + 1)
             time.sleep(1) 
         print self
