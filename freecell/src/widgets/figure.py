@@ -18,7 +18,7 @@ from axes import DPI
 def get_line_parameters(x1, y1, x2, y2):
   # y1 = ax1 + b
   # y2 = ax2 + b
-  print (x1, y1, x2, y2)
+  #print (x1, y1, x2, y2)
   a = (y1 - y2) / (x1 - x2) 
   b =  y1 - a * x1
   return a, b
@@ -52,9 +52,6 @@ class Figure(Widget):
     canvas.mpl_connect('draw_event', on_draw)
     canvas.print_figure(full_filename, dpi=DPI)
     
-    print 'a%s'%self.pixel_point1
-    print 'b%s'%self.pixel_point2
-
     data = {}
     data['a_pixel_x'], data['b_pixel_x'] = get_line_parameters(self.data_point1[0], self.pixel_point1[0], self.data_point2[0], self.pixel_point2[0])
     data['a_pixel_y'], data['b_pixel_y'] = get_line_parameters(self.data_point1[1], self.pixel_point1[1], self.data_point2[1], self.pixel_point2[1])
