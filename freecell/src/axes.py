@@ -15,7 +15,7 @@ def new_figure(x_size=256, y_size=256):
 def small_ticks(ax):
   for label in  ax.yaxis.get_ticklabels() + ax.xaxis.get_ticklabels():
     label.set_fontsize('xx-small')
-  
+
 def points(ax, datatable, markers):
   points = datatable.get_cols(*markers)
   ax.scatter(points[0], points[1], s=1, marker='o')
@@ -174,7 +174,7 @@ def kde1d_points(ax, points, min_x=None, max_x=None, norm=1):
     max_x_ = np.max(points) + range / 10
   from mlabwrap import mlab
   bandwidth, density, xmesh = mlab.kde(
-      np.array([points]).T, 2**12, min_x_, max_x_, nout=3)
+      np.array([points]).T, float(2**12), float(min_x_), float(max_x_), nout=3)
   xmesh = xmesh[0]
   density = density.T[0]
   density = np.multiply(density, float(norm))
@@ -193,7 +193,7 @@ def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1):
       max_x_ = np.max(points) + range / 10
     from mlabwrap import mlab
     data.bandwidth, data.density, data.xmesh = mlab.kde(
-        points, 2**12, min_x_, max_x_, nout=3)
+        points, float(2**12), float(min_x_), float(max_x_), nout=3)
     data.xmesh = data.xmesh[0]
     #print 'den:' + str(np.shape(data.density[0]))
     data.density = data.density.T[0]
@@ -233,9 +233,9 @@ def kde2d_data(
       max_a = max(a)
     points = datatable.get_points(markers[0], markers[1])
     bandwidth,data.density, data.X, data.Y = mlab.kde2d(
-        points, res,        
-        [[min_a, min_w]],
-        [[max_a, max_w]],
+        points, float(res),        
+        [[float(min_a), float(min_w)]],
+        [[float(max_a), float(max_w)]],
         nout=4)
   data = services.cache((datatable, markers, range), cached)
   display_data = data.density
