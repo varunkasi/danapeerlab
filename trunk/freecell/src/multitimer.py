@@ -14,10 +14,12 @@ class MultiTimer(object):
   def complete_task(self, message=''):
     self.task_times.append(time.clock())
     self.__update_bar(message)
-    if sys.platform.lower().startswith('win'):
-      sys.stdout.write('\r')
-    else:
-      sys.stdout.write(chr(27) + '[A')
+    sys.stdout.write('\r')
+    #if sys.platform.lower().startswith('win'):
+    #  sys.stdout.write('\r')
+    #else:
+    #  sys.stdout.write('\n')
+    #sys.stdout.write(chr(27) + '[A')
     sys.stdout.write(self.prog_bar)
     sys.stdout.flush()
     if len(self.task_times) == self.num_tasks:
