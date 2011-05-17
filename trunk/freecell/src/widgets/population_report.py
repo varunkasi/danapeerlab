@@ -129,7 +129,7 @@ def sigmoid_fit(x,y, p_guess=None):
   if not p_guess:
     p_guess=(np.median(x),np.median(y), 1.0, 1.0)
   p, cov, infodict, mesg, ier = scipy.optimize.leastsq(
-    residuals,p_guess,args=(x,y),full_output=1,warning=True) 
+    residuals,p_guess,args=(x,y),full_output=1) 
   return p  
   
 class PairFit(Widget):
