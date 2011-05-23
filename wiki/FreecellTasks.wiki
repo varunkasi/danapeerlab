@@ -1,0 +1,13 @@
+#summary Tasks for Freecell.
+
+= Freecell Tasks =
+
+== Chain editing ==
+  * Add delete module.
+  * Add custom input for module.
+  * Auto choose default values.
+
+== Modules ==
+  * Clustering module.
+  * Load single fcs.
+  * Comparison module.
