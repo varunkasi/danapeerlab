@@ -33,11 +33,22 @@ class PopulationPicker(Widget):
       return DataIndex.load(settings.EXPERIMENTS[self.experiment])
       
 
-  def title(self):
-    return self.summary
+  def title(self, short):
+    if short:           
+      return self.experiment
+    else:
+      return self.summary
 
-  def run(self, data):
-    data['table'] = self.get_data()
+  def get_inputs(self):
+    return []
+  
+  def get_outputs(self):
+    return ['table']
+
+  def run(self):
+    ret = {}
+    ret['table'] = self.get_data()
+    return ret
 
   def get_data(self, count=False):
     index = self._get_index()
@@ -78,7 +89,7 @@ class PopulationPicker(Widget):
             [summary_from_widget(w, index) for w in self.experiment_to_widgets.get(self.experiment, [])]),
             self.get_data(True))
 
-  def view(self, data=None, enable_expander=False):
+  def view(self, enable_expander=False):
     experiments = settings.EXPERIMENTS.keys()
     if not self.experiment:
       return stack_lines(

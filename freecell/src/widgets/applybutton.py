@@ -19,7 +19,7 @@ class ApplyButton(Widget):
       self.values.clicked = False
       self.clicked = True
   
-  def view(self, text='Apply'):
+  def view(self, text='Apply'):  
     html = render('applybutton.html', {
         'text' : text,
         'id' : self._get_unique_id(),
@@ -28,5 +28,5 @@ class ApplyButton(Widget):
         self, 
         html, 
         ['ui-lightness/jquery-ui-1.8.11.custom.css'],
-        ['jquery-ui-1.8.11.custom.min.js'])
+        ['jquery.blockUI.js'])
     return v

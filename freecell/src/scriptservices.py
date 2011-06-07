@@ -1,5 +1,6 @@
 ﻿#!/usr/bin/env python
 import threading
+import time
 import hashlib
 import os
 import logging
@@ -56,17 +57,28 @@ class Cache(object):
     with open(full_path, 'r') as f:
       return pickle.load(f)
     
+MEM_CACHE = {}
 CACHE = Cache(os.path.join(settings.FREECELL_DIR, 'cache'))
 
-def cache(dir='', prefix=''):
+def cache(dir='', prefix='', disk=False):
   def cache_wrap(func):
     def cached_func(*args, **kargs):
+      #start = time.clock()
       key = function_call_to_unique_string(func, args, kargs)
-      if not key in CACHE:
-        val = func(*args, **kargs)
-        
-        CACHE.put(key, val, dir, prefix)
-      return CACHE.get(key)
+      #logging.info('key took %.2f seconds' % (time.clock() - start))
+      if not key in MEM_CACHE:
+        if disk:
+          if not key in CACHE:
+            val = func(*args, **kargs)
+            CACHE.put(key, val, dir, prefix)
+          MEM_CACHE[key] = CACHE.get(key)
+        else:
+          val = func(*args, **kargs)
+          MEM_CACHE[key] = val
+      #start = time.clock()
+      ret =  MEM_CACHE.get(key)
+      #logging.info('get took %.2f seconds' % (time.clock() - start))
+      return ret
     return cached_func
   return cache_wrap
 
@@ -155,6 +167,8 @@ def make_unique_str(obj):
     return '<method %s %s %s>' % (obj.__name__, obj.im_class.__name__, obj.__module__)
   elif type(obj) == DataIndex:
     return '<DataIndex %s>' % obj.path
+  elif obj == None:
+    return '<None>'
   raise Exception('Unsupported type %s' % type(obj))
 
 def function_call_to_unique_string(func, args, kargs):

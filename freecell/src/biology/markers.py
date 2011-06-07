@@ -54,7 +54,8 @@ def normalize_marker_name(name):
 def marker_from_name(name):
   norm_name = normalize_marker_name(name)
   if not norm_name in _name_to_marker:
-    logging.error('Could not find marker name %s (%s)' % (name, norm_name))
+    pass
+    #logging.error('Could not find marker name %s (%s)' % (name, norm_name))
   return _name_to_marker.get(norm_name, None)
 
 def is_marker_registered(name):

@@ -1,4 +1,5 @@
 <div id="{{ id }}" class="expand_box">
+{{ extra|safe }}
 <h3 id="{{ id }}_title" class="expand">
 <a style="display:block" href="#" title="Expand/Collapse">
 {{ collapsed|safe }}
@@ -20,6 +21,7 @@ $(document).ready(function() {
     } else {
       set_value("{{ widget_id }}", "shown", "shown");
     }
+    return false;
   });
 });
 </script>
