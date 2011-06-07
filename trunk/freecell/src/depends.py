@@ -63,19 +63,19 @@ def add_symlink(head, tail):
     global symlinks
     symlinks.append(tail)
 
-def set_env_vars():
-  platform = get_platform()
-  matlab_dll_dir = os.path.join(settings.MATLAB_PATH, 'bin', platform)
-  if sys.platform == 'win32':    
-    old_path = os.getenv('PATH')
-    new_path = ';'.join([matlab_dll_dir]) + ';'
-    if not new_path in old_path:
-      os.environ['PATH'] =  new_path + old_path
-  if sys.platform == 'darwin':
+#def set_env_vars():
+#  platform = get_platform()
+#  matlab_dll_dir = os.path.join(settings.MATLAB_PATH, 'bin', platform)
+#  if sys.platform == 'win32':    
+#    old_path = os.getenv('PATH')
+#    new_path = ';'.join([matlab_dll_dir]) + ';'
+#    if not new_path in old_path:
+#      os.environ['PATH'] =  new_path + old_path
+#  if sys.platform == 'darwin':
     # We are trying hard not to set DYLD_LIBRARY_PATH. 
     # fix for MATLAB 2010:   
-    add_symlink(matlab_dll_dir, 'libtbb.dylib')   
-    add_symlink(matlab_dll_dir, 'libtbbmalloc.dylib')
+    #add_symlink(matlab_dll_dir, 'libtbb.dylib')   
+    #add_symlink(matlab_dll_dir, 'libtbbmalloc.dylib')
     
     #lib_dir = os.path.join(settings.SCF_DIR, 'depends', 'osx', 'lib')
     #old_path = os.getenv('DYLD_LIBRARY_PATH') or ''
@@ -85,7 +85,7 @@ def set_env_vars():
     #print 'DYLD_LIBRARY_PATH is now: %s' % os.getenv('DYLD_LIBRARY_PATH')
       
 def fix_path(skip_matlab=False):
-  set_env_vars()
+  #set_env_vars()
   set_python_path()
   if not skip_matlab:
     print 'Loading matlab...'

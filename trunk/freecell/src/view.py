@@ -65,7 +65,9 @@ def stack_lines(*sub_items):
   for v in sub_views:
     ret.append_view_files(v)
   return ret
-  
+
+def vertical_seperator(sender=None):
+  return View(sender,  '<div style="border-top-style: solid; border-top-width: 1px; border-color: #CCC;" ></div>')
 
   
 
@@ -87,7 +89,7 @@ class View(object):
     
   def create_page(self):
     for filename, img in self.images.iteritems():
-      full_filename = os.path.join(settings.FREECELL_DIR, 'static', 'images', filename)
+      full_filename = os.path.join(settings.FREECELL_DIR, 'static', 'fig_images', filename)
       with open(full_filename, 'wb') as f:
         f.write(img)
 

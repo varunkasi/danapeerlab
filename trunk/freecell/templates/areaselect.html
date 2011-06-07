@@ -10,7 +10,10 @@ $(document).ready(function () {
       var max_y = y_data_to_pixel_{{ figure_id_func }}($('#{{ max_y_id }}').attr('value'));
       var ias = $('#{{ figure_id }}').imgAreaSelect({ instance: true });
       ias.setSelection(min_x, max_y, max_x, min_y, true);
-      setTimeout("var ias = $('#{{ figure_id }}').imgAreaSelect({ instance: true });ias.update();", 500);
+      setTimeout("var ias = $('#{{ figure_id }}').imgAreaSelect({ instance: true }); ias.update(false);", 500);
+      setTimeout("var ias = $('#{{ figure_id }}').imgAreaSelect({ instance: true }); ias.update(false);", 1000);
+      setTimeout("var ias = $('#{{ figure_id }}').imgAreaSelect({ instance: true }); ias.update(false);", 2000);
+      setTimeout("var ias = $('#{{ figure_id }}').imgAreaSelect({ instance: true }); ias.update(false);", 4000);
     };
     
     $('#{{ figure_id }}').imgAreaSelect({

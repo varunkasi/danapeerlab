@@ -50,7 +50,7 @@ $(document).ready(function(){
       noneSelectedText: "None",
       selectedList: 5,
       selectedText: function(checked, total, arr) {
-          if (checked == total) {
+          if (checked == total && checked > 1) {
             return "Any";
           }
           arr = jQuery.map(arr, function (obj) { return obj.title; });

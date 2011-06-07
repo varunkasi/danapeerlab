@@ -48,6 +48,10 @@ class Widget(object):
     self.widgets[name] = new_widget
     return new_widget
   
+  def _remove_widget(self, widget):
+    widget_name = widget.id.split(ID_SEPERATOR)[-1]
+    del self.widgets[widget_name]
+  
   def run_on_load(self):
     for w in self.widgets.values():
       w.run_on_load()
