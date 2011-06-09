@@ -4,6 +4,7 @@ import time
 import logging
 import axes
 import view
+from timer import Timer
 from widget import Widget
 from view import View
 from view import render
@@ -192,10 +193,9 @@ class AbstractPlot(Widget):
     try:
       id_to_fig = []
       inputs = [input for input in self.get_inputs() if tables[input]]
-      start = time.clock()
-      for input in inputs:
-        id_to_fig.append(self._draw_figures(tables[input], dim_x, dim_y))
-      logging.info('time for draw_figures: %.2f' % (time.clock()-start))
+      with Timer('draw figures'):
+        for input in inputs:
+          id_to_fig.append(self._draw_figures(tables[input], dim_x, dim_y))
       if self.enable_gating:
         assert len(id_to_fig[0]) == 1
         fig = id_to_fig[0].values()[0]
@@ -286,9 +286,7 @@ class ScatterPlot(AbstractPlot):
         color = None
       fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
       ax = fig.add_subplot(111)
-      #start = time.clock()
       axes.scatter2(ax, table, (dim_x, dim_y), range, color, min_cells_per_bin = min_cells, no_bins=no_bins)
-      #logging.info('time for scatter %.2f' % (time.clock() - start))
       ret[str(color)] = fig
     return ret
 

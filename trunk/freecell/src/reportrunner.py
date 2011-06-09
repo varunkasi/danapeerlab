@@ -8,6 +8,7 @@ import Queue
 import threading
 from threading import Thread
 from report import REPORTS
+from timer import Timer
 
 class ReportRequest(object):
   """A request to run a report."""
@@ -27,13 +28,6 @@ class ReportRunner(object):
     self.report_id_to_result = {}
     self.working_lock = threading.RLock()
     
-    if sys.platform == "win32":
-      # On Windows, the best timer is time.clock()
-      self.timer = time.clock
-    else:
-      # On most other platforms the best timer is time.time()
-      self.timer = time.time
-
   def start(self):
     if self.thread and self.thread.is_alive():
       raise Exception("Report runner is already active.")
@@ -74,10 +68,8 @@ class ReportRunner(object):
         logging.info('******RUNNING REPORT %s %s******' % (r.name, r.version))
         try:
           r.widget.run_on_load()
-          start = time.clock()
-          self.report_id_to_result[req.report_id] = (r, r.widget.view())
-          view_time = time.clock() - start
-          logging.info('Report runtime: %.3f seconds' % (view_time))
+          with Timer('Report'):
+            self.report_id_to_result[req.report_id] = (r, r.widget.view())
         except Exception as e:
           logging.exception('Exception while running a report.')
           self.report_id_to_result[req.report_id] = (r, e)

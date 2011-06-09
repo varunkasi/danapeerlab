@@ -4,15 +4,22 @@ import sys
 class MultiTimer(object):
   def __init__(self, num_tasks):
     self.num_tasks = num_tasks
-    self.start = time.clock()
+    
     self.task_times = []
 
     self.prog_bar = '[]'
     self.fill_char = '#'
     self.width = 10
+    if sys.platform == "win32":
+      # On Windows, the best timer is time.clock()
+      self.timer = time.clock
+    else:
+      # On most other platforms the best timer is time.time()
+      self.timer = time.time
+    self.start = self.timer()
   
   def complete_task(self, message=''):
-    self.task_times.append(time.clock())
+    self.task_times.append(self.timer())
     self.__update_bar(message)
     sys.stdout.write('\r')
     #if sys.platform.lower().startswith('win'):

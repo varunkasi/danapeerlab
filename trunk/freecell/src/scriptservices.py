@@ -65,9 +65,9 @@ CACHE = Cache(os.path.join(settings.FREECELL_DIR, 'cache'))
 def cache(dir='', prefix='', disk=False):
   def cache_wrap(func):
     def cached_func(*args, **kargs):
-      #start = time.clock()
+      #start = time.timer()
       key = function_call_to_unique_string(func, args, kargs)
-      #logging.info('key took %.2f seconds' % (time.clock() - start))
+      #logging.info('key took %.2f seconds' % (time.timer() - start))
       if not key in MEM_CACHE:
         if disk:
           if not key in CACHE:
@@ -77,9 +77,9 @@ def cache(dir='', prefix='', disk=False):
         else:
           val = func(*args, **kargs)
           MEM_CACHE[key] = val
-      #start = time.clock()
+      #start = time.timer()
       ret =  MEM_CACHE.get(key)
-      #logging.info('get took %.2f seconds' % (time.clock() - start))
+      #logging.info('get took %.2f seconds' % (time.timer() - start))
       return ret
     return cached_func
   return cache_wrap
