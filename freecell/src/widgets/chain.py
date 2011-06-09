@@ -16,6 +16,7 @@ from input import Input
 from applybutton import ApplyButton
 from figure import Figure
 from layout import Layout
+from timer import Timer
 from expander import Expander
 from miniexpander import MiniExpander
 from histogram import HistogramPlot
@@ -212,19 +213,15 @@ class Chain(Widget):
     views = []
     possible_inputs = [('None', 'None')]
     for i, widget in enumerate(self.widgets_in_chain):
-      view_start = time.clock()
       #logging.info('Getting view for Widget %d %s' % (i, widget.title(i, True)))
-      views.append(widget.view(data, i, possible_inputs))
-      view_time = time.clock() - view_start
-      logging.info('Widget %d view: %.3f seconds' % (i+1, view_time))
+      with Timer('Widget %d view' % (i+1)):
+        views.append(widget.view(data, i, possible_inputs))
       possible_inputs += self.widget_in_chain_to_inputs(widget, i)
       #logging.info('Running Widget %d %s' % (i, widget.title(i)))
       try:
-        run_start = time.clock()
-        widget_data = widget.run(data)
+        with Timer('Widget %d run' % (i+1)):
+          widget_data = widget.run(data)
         data.append(widget_data)
-        run_time = time.clock() - run_start
-        logging.info('Widget %d run: %.3f seconds' % (i+1, run_time))
         if widget_data and 'view' in widget_data:
           views.append(widget_data['view'])
           del widget_data['view']
