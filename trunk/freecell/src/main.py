@@ -132,34 +132,57 @@ class Images:
         else:
             raise web.notfound()
 
-
+def startup_tests():
+  has_error = False
+  try:
+    import numpy
+  except:
+    print 'numpy seems to be missing, please install it.'    
+    has_error = True
+  try:
+    import scipy
+  except:
+    print 'scipy seems to be missing, please install it.'
+    has_error = True
+  try:
+    import matplotlib
+  except:
+    print 'matplotlib seems to be missing, please install it.'
+    has_error = True
+  try:
+    import settings
+  except:
+    print 'settings file seems to be missing. Please edit settings/_settings.py and save it as settings/settings.py'
+    has_error = True
+  if has_error:
+    return False
+  if not os.path.exists(os.path.join(settings.FREECELL_DIR, 'src', 'main.py')):
+    import depends
+    print 'FREECELL_DIR in settings file seems to be wrong. Please edit settings/settings.py. You might want to try %s' % os.path.split(os.path.dirname(depends.__file__))[0]
+    has_error = True
+  return not has_error
+  # TODO: check experiments, matlab path.
+  
+  
+            
 if __name__ == "__main__":
-    # configuer logging for the application:
-    logging.getLogger('').setLevel(logging.DEBUG)
-    stream_handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        "[%(levelname)s] %(message)s", )
-    stream_handler.setFormatter(formatter)
-    logging.getLogger('').addHandler(stream_handler)   
+    if startup_tests():
+      # configuer logging for the application:
+      logging.getLogger('').setLevel(logging.DEBUG)
+      stream_handler = logging.StreamHandler()
+      formatter = logging.Formatter(
+          "[%(levelname)s] %(message)s", )
+      stream_handler.setFormatter(formatter)
+      logging.getLogger('').addHandler(stream_handler)   
 
-    # To serve from the static dir:
-    os.chdir(settings.FREECELL_DIR)
-    
-    # Use django default settings:
-    from django.conf import settings
-    settings.configure()
-    
-    # Start report runner
-    runner.start()
-
-    #report = SlicesReport()
-    #report = PopulationReport()
-    #report = CorrelationReport()
-    #report = HistogramReport()
-    #report = Graph()
-    #view = report.view(None, None)    
-    #view = report.view()    
-
-    app.run()
-    
-    runner.end()
+      # To serve from the static dir:
+      os.chdir(settings.FREECELL_DIR)
+      
+      # Use django default settings:
+      from django.conf import settings
+      settings.configure()
+      
+      # Start report runner
+      runner.start()
+      app.run()
+      runner.end()

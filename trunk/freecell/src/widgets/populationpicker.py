@@ -110,6 +110,9 @@ class PopulationPicker(Widget):
         widgets.append(new_widget)
       self.experiment_to_widgets[self.experiment] = widgets
     
+    for w in self.experiment_to_widgets[self.experiment]:
+      w.guess_or_remember_choices(w.tag, w.vals, self.__class__.__name__)
+
     views = [w.view(w.tag, self.widgets.apply, w.vals) for w in self.experiment_to_widgets[self.experiment]]
     stacked_views = stack_lines(*views)
       

@@ -29,8 +29,8 @@ class Widget(object):
       self.set_value(name, val)
   def set_value(self, name, val):
     self.values[name] = val
-#    if name in self.on_set_values:
-#      self.on_set_values[name]()
+    if self.has_method('on_set_value'):
+      self.on_set_value(name, val)
       
   
 #  def _register_on_set_value(self, name, func):
@@ -42,7 +42,7 @@ class Widget(object):
   def _add_widget(self, name, new_widget_type, *args, **kargs):
     name = self._normalize_id(name)
     if name in self.widgets:
-      raise Exception('name %s is already in use')
+      raise Exception('name %s is already in use' % name)
     new_id = '%s%s%s' % (self.id, ID_SEPERATOR, name)
     new_widget = new_widget_type(new_id, self, *args, **kargs)   
     self.widgets[name] = new_widget

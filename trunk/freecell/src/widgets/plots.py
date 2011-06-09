@@ -55,6 +55,7 @@ class AbstractPlot(Widget):
   def draw_figures(self, fig, table, dim_x, dim_y, range):    
     raise Exception('Not Implemented')
 
+  @cache('plots')
   def _draw_figures(self, table, dim_x_arr, dim_y_arr):
     ret = OrderedDict()
     for dim_x in dim_x_arr:
@@ -117,9 +118,11 @@ class AbstractPlot(Widget):
       data['view'] = View(self, 'Table gated, %d cells left' % data['table'].num_cells)
       return data
     
-  @cache('plots')
+  
   def view(self, **tables):
     table = tables['table']
+    self.widgets.dim_x.guess_or_remember_choices('X Axis', options_from_table(table), self.__class__.__name__)
+    self.widgets.dim_y.guess_or_remember_choices('Y Axis', options_from_table(table), self.__class__.__name__)
     if not self._dims_ready(table):
       control_panel_view = stack_lines(
           self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
@@ -162,8 +165,8 @@ class AbstractPlot(Widget):
 
     if self.enable_gating:
       control_panel_view = stack_lines(
-          self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), False),
-          self.widgets.dim_y.view('Y Axis', self.widgets.apply, options_from_table(table), False),
+          self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
+          self.widgets.dim_y.view('Y Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
           self.control_panel(table),
           #self.widgets.min_x.view('Min X',  self.widgets.apply, [('Default', table.min(dim_x))]),
           #self.widgets.min_y.view('Min Y',  self.widgets.apply, [('Default', table.min(dim_y))]),
@@ -182,8 +185,8 @@ class AbstractPlot(Widget):
           self.widgets.apply.view())
     else:
       control_panel_view = stack_lines(
-          self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), True),
-          self.widgets.dim_y.view('Y Axis', self.widgets.apply, options_from_table(table), True),
+          self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
+          self.widgets.dim_y.view('Y Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
           self.control_panel(table),
           self.widgets.apply.view())
     try:
@@ -260,10 +263,10 @@ class ScatterPlot(AbstractPlot):
     return 'Scatter Plot'
   
   def control_panel(self, table): 
-    if len(self.widgets.color.values.choices) == 0:
+    if not self.widgets.color.values.choices:
       self.widgets.color.values.choices = ['None']
     colors = [('None', ['None'])] + options_from_table(table)
-    if len(self.widgets.num_bins.values.choices) == 0:
+    if not self.widgets.num_bins.values.choices:
       self.widgets.num_bins.values.choices = ['128']
     if self.widgets.min_cells_in_bin.values.value == None:
       self.widgets.min_cells_in_bin.values.value = 1

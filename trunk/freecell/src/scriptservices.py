@@ -49,10 +49,12 @@ class Cache(object):
   def __contains__(self, key):
     return self.find_file(key) != None
   
-  def get(self, key):
+  def get(self, key, none_if_not_found=False):
     assert type(key) in (str, unicode)
     full_path = self.find_file(key)
     if not full_path:
+      if none_if_not_found:
+        return None
       raise Exception('file for key %s not found' % key)
     with open(full_path, 'r') as f:
       return pickle.load(f)
