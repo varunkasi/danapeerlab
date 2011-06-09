@@ -199,7 +199,7 @@ def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1):
     # TODO(daniv): make sure this line isn't needed on mac
     #data.xmesh = data.xmesh[0]
     #print 'den:' + str(np.shape(data.density[0]))
-    data.density = data.density.T[0]
+    #data.density = data.density.T[0]
     data.density = np.multiply(data.density, float(norm))
   data = services.cache((datatable, marker, min_x, max_x), cached) 
   ax.plot(data.xmesh, data.density)
