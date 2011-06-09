@@ -3,9 +3,9 @@
 = Freecell Tasks =
 
 == Chain editing ==
-  * Add delete module.
-  * Add custom input for module.
-  * Auto choose default values.
+  * Add delete module. - done
+  * Add custom input for module. - done
+  * Auto choose default values. - done
 
 == Modules ==
   * Clustering module.
