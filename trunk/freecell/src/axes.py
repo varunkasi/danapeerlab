@@ -193,7 +193,7 @@ def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1):
       max_x_ = np.max(points) + range / 10
     from mlabwrap import mlab
     data.bandwidth, data.density, data.xmesh = mlab.kde(
-        points, float(2**12), float(min_x_), float(max_x_), nout=3)
+        points, float(2**10), float(min_x_), float(max_x_), nout=3)
     # TODO(daniv): make sure this line isn't needed on mac
     #data.xmesh = data.xmesh[0]
     #print 'den:' + str(np.shape(data.density[0]))
