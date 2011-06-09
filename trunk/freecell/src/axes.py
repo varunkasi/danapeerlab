@@ -200,8 +200,8 @@ def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1):
     #data.density = data.density.T[0]
     data.density = np.multiply(data.density, float(norm))
   data = services.cache((datatable, marker, min_x, max_x), cached) 
-  print data.xmesh.shape
-  print data.density.shape
+  #print data.xmesh.shape
+  #print data.density.shape
   ax.plot(data.xmesh, data.density)
   ax.set_title(marker)
   return ax
