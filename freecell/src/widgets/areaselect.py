@@ -9,7 +9,7 @@ from django.utils.html import linebreaks
 import settings
 import StringIO
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 #import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 

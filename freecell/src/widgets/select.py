@@ -1,5 +1,10 @@
 ﻿#!/usr/bin/env python
+import settings
+import os
+import pickle
 from odict import OrderedDict
+from scriptservices import CACHE
+from scriptservices import make_unique_str
 from widget import Widget
 from view import View
 from view import render
@@ -21,9 +26,23 @@ def options_from_table(table):
 class Select(Widget):
   def __init__(self, id, parent):
     Widget.__init__(self, id, parent)
-    self.values.choices = []
+    self.values.choices = None
+
+
+  def guess_or_remember_choices(self, text, options, guess_hint=''):
+    select_dict = CACHE.get('select_dict', none_if_not_found=True)
+    key = make_unique_str((text, options, guess_hint))
+    print key
+    if not select_dict:
+      select_dict = {}
+    if self.values.choices == None:
+      self.values.choices = select_dict.get(key, None)
+    else:
+      select_dict[key] = self.values.choices
+      CACHE.put('select_dict', select_dict, 'select')
+    print self.values.choices
+
     
-   
   def view(self, text, save_button, options, multiple=True, group_buttons=[], choices=None):
     def add_titles_if_needed(items):
       if items and type(items[0]) != tuple:
@@ -33,9 +52,11 @@ class Select(Widget):
     def add_selected_state(items):
       return [(o[0], o[1], o[0] in choices) for o in items]
       
-    if choices==None:
-      choices = self.values.choices    
-    
+    if choices == None:
+      choices = self.values.choices
+    if choices == None:
+      choices = []
+      
     options = add_titles_if_needed(options)
     #print options
     # Now options is either a list of title,val or a list of (group_name, group_values)
