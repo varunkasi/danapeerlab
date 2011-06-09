@@ -165,7 +165,7 @@ class MatlabPipe(object):
     #print '******'
     temp.close()
     for key in ret.iterkeys():
-      while ret[key].shape and len(ret[key]) == 1:
+      while ret[key].shape and ret[key].shape[-1] == 1:
         ret[key] = ret[key][0]
       if extract_numpy_scalars:
         if isinstance(ret[key], np.ndarray) and not ret[key].shape:
