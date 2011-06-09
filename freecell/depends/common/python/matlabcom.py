@@ -12,7 +12,12 @@ License: MIT
 """
 
 import numpy as np
-import win32com.client
+try:
+  import win32com.client
+except:
+  print 'win32com in missing, please install it'
+  raise
+
 
 class MatlabCom(object):
   """ Manages a matlab COM client.
@@ -82,6 +87,7 @@ class MatlabCom(object):
     ret = {}
     for name in names_to_get:
       ret[name] = self.client.GetWorkspaceData(name, 'base')
+      # TODO(daniv): Do we really want to reduce dimensions like that? what if this a row vector?
       while isinstance(ret[name], (tuple, list)) and len(ret[name]) == 1:
         ret[name] = ret[name][0]
       if convert_to_numpy and isinstance(ret[name], (tuple, list)):
