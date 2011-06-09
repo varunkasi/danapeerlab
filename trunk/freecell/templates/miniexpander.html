@@ -1,0 +1,22 @@
+<a id="{{ id }}_title" style="color:black; display:block" href="#" title="Expand/Collapse">
+{{ collapsed|safe }}
+</a>
+{% if shown %}
+<div id="{{ id }}_content"> {{ expanded|safe }} </div>
+{% else %}
+<div id="{{ id }}_content" style="display: none"> {{ expanded|safe }} </div>
+{% endif %}
+
+<script type="text/javascript">
+$(document).ready(function() { 
+  $("#{{ id }}_title").click(function() {
+    $("#{{ id }}_content").toggle(0, function(){$(window).resize();});
+    if ($("#{{ id }}_content").is(':hidden')) {
+      set_value("{{ widget_id }}", "shown", "hidden");
+    } else {
+      set_value("{{ widget_id }}", "shown", "shown");
+    }
+    return false;
+  });
+});
+</script>
