@@ -77,7 +77,7 @@ class ReportRunner(object):
           start = time.clock()
           self.report_id_to_result[req.report_id] = (r, r.widget.view())
           view_time = time.clock() - start
-          logging.info('Widget view: %.3f seconds' % (i+1, view_time))
+          logging.info('Report runtime: %.3f seconds' % (view_time))
         except Exception as e:
           logging.exception('Exception while running a report.')
           self.report_id_to_result[req.report_id] = (r, e)
