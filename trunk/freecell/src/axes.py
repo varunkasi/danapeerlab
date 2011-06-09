@@ -194,14 +194,14 @@ def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1):
     from mlabwrap import mlab
     data.bandwidth, data.density, data.xmesh = mlab.kde(
         points, float(2**12), float(min_x_), float(max_x_), nout=3)
-    print data.xmesh.shape
-    print data.density.shape
     # TODO(daniv): make sure this line isn't needed on mac
     #data.xmesh = data.xmesh[0]
     #print 'den:' + str(np.shape(data.density[0]))
     #data.density = data.density.T[0]
     data.density = np.multiply(data.density, float(norm))
   data = services.cache((datatable, marker, min_x, max_x), cached) 
+  print data.xmesh.shape
+  print data.density.shape
   ax.plot(data.xmesh, data.density)
   ax.set_title(marker)
   return ax
