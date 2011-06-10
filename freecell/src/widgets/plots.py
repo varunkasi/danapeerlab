@@ -211,8 +211,10 @@ class AbstractPlot(Widget):
             fig = id_to_fig[i][key]
             line.append(self.widgets[widget_key].view(fig))
           lines.append(line)
-        #main_view = view.stack_left(*main_views)
-        main_view = self.widgets.input_table.view(inputs, lines)
+        if len(inputs) == 1:
+          main_view = view.stack_left(*[l[0] for l in lines])
+        else:
+          main_view = self.widgets.input_table.view(inputs, lines)
     except Exception as e:
       main_view = View(self, str(e))
       logging.exception('Exception while drawing %s' % self.name())

@@ -187,10 +187,6 @@ except ImportError:
 from tempfile import gettempdir
 
 is_win = sys.platform == 'win32'
-MATLAB_PATH = '/Applications/MATLAB_R2010b.app/bin/matlab'
-def set_matlab_path(path):
-  global MATLAB_PATH
-  MATLAB_PATH = path
 
 if is_win:
   from matlabcom import MatlabCom as MatlabConnection
@@ -200,14 +196,17 @@ else:
 class mlabraw:
   @staticmethod
   def open(arg):
-    global MATLAB_PATH
-    if not MATLAB_PATH:
-      raise Exception('matlab path not defined')
     if is_win:
       ret = MatlabConnection()
+      ret.open()
     else:
-      ret = MatlabConnection(MATLAB_PATH)
-    ret.open()
+      import settings
+      matlab_path = settings.MATLAB_PATH + '/bin/matlab'
+      try:
+        ret = MatlabConnection(matlab_path)
+        ret.open()
+      except:
+        print 'Could not open matlab, is it in %s?' % matlab_path
     return ret
   
   @staticmethod

@@ -37,7 +37,7 @@ class Widget(object):
 #    self.on_set_values[name] = func
          
   def _normalize_id(self, id):
-    return id.replace(' ', '').replace('-','')
+    return id.replace(' ', '').replace('-','').replace('/','_').replace('\\', '_')
 
   def _add_widget(self, name, new_widget_type, *args, **kargs):
     name = self._normalize_id(name)
