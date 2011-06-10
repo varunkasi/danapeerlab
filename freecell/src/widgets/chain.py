@@ -175,13 +175,15 @@ class Chain(Widget):
     self._add_widget('new_widget_select', Select)
     self._add_widget('apply', ApplyButton)
     self.widgets_in_chain = []
+    self.widget_counter = 0
   
   def on_load(self):
     # add new modules
     if self.widgets.new_widget_select.values.choices:
       type_to_create, args, kargs = widget_name_to_type(self.widgets.new_widget_select.values.choices[0])
       self.widgets.new_widget_select.values.choices = []
-      w = self._add_widget('chain_%d' % len(self.widgets_in_chain), WidgetInChain, type_to_create, self.widgets_in_chain, args, kargs)
+      w = self._add_widget('chain_%d' % self.widget_counter, WidgetInChain, type_to_create, self.widgets_in_chain, args, kargs)
+      self.widget_counter += 1
       self.widgets_in_chain.append(w)
     # delete modules
     for i, w in enumerate(self.widgets_in_chain):
