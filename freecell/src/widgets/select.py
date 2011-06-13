@@ -39,7 +39,7 @@ class Select(Widget):
       select_dict[key] = self.values.choices
       CACHE.put('select_dict', select_dict, 'select')   
    
-  def view(self, text, save_button, options, multiple=True, group_buttons=[], choices=None):
+  def view(self, text, save_button, options, multiple=True, group_buttons=[], choices=None, comment=''):
     def add_titles_if_needed(items):
       if items and type(items[0]) != tuple:
         items = zip(items, items)
@@ -74,6 +74,7 @@ class Select(Widget):
         'id' : self._get_unique_id(),
         'multiple' : multiple,
         'items' : options,
+        'comment' : comment,
         'widget_id' : self.id})
     v = View(
         self, 

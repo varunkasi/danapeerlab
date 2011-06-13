@@ -106,11 +106,11 @@ class DataIndex(object):
     counts = [self.num_cells_from_entry(e) for e in entries_to_load]
     return reduce(int.__add__, counts, 0)
 
-  def load_table_predicate(self, predicate):   
+  def load_table_predicate(self, predicate, arcsin_factor=1):   
     entries_to_load = [e for e in self.entries if predicate(e.tags)]
     if not entries_to_load:
       raise Exception('Could not find data matching the query')
-    tables_to_load = [self.table_from_entry(e) for e in entries_to_load]
+    tables_to_load = [self.table_from_entry(e, arcsin_factor) for e in entries_to_load]
     tables_to_load = [t for t in tables_to_load if t]
     return combine_tables(tables_to_load)
   
@@ -145,14 +145,15 @@ class DataIndex(object):
   def num_cells_from_entry(self, entry):
     return get_num_events(os.path.join(self.path, entry.filename))
 
-  def table_from_entry(self, entry):
+  def table_from_entry(self, entry, arcsin_factor=1):
     value_str = [entry.tags.get(t, NO_VALUE_TAG) for t in self.tags]
     value_num = [self.legends[i][val] for i,val in enumerate(value_str)]    
     table =  load_data_table(
         os.path.join(self.path, entry.filename), 
         self.tags,
         value_num,
-        self.legends)
+        self.legends,
+        arcsin_factor)
     if table:
       services.print_text('<b>Loaded %d cells from entry ...%s</b>' % (table.data.shape[0], entry.filename[-100:]))
     return table

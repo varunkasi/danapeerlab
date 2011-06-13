@@ -12,10 +12,13 @@ class Input(Widget):
     Widget.__init__(self, id, parent)
     self.values.value = None
     
+  def value_as_str(self):
+    return self.values.value
+
   def value_as_float(self):
     return float(self.values.value)
 
-  def view(self, text, apply, predefined_values=[], id=None, numeric_validation=True):
+  def view(self, text, apply, predefined_values=[], id=None, numeric_validation=True, comment=''):
     if not id:
       id = self._get_unique_id()
     val = ''   
@@ -28,6 +31,7 @@ class Input(Widget):
         'text' : text, 
         'predefined_values' : predefined_values,
         'numeric_validation' : numeric_validation,
+        'comment' : comment,
         'widget_id' : self.id})
     v = View(
         self, 

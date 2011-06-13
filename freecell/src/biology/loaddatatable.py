@@ -182,11 +182,11 @@ def fcsextract(filename):
   return fcs_vars,events,is_peng
 
 load_data_table_CACHE = {}
-def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[]):
+def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[], arcsin_factor=1):
   global load_data_table_CACHE
   if not filename:
     raise Exception('No filename was provided to load_data_table')
-  if not filename in load_data_table_CACHE:
+  if not (filename, arcsin_factor)  in load_data_table_CACHE:
     fcs_vars, events, is_peng = fcsextract(filename)
     if not events:
       logging.error('File %s is empty' % filename)
@@ -202,7 +202,7 @@ def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[]):
     data = array(events)
     indices_to_transform = [i for i,n in enumerate(dims) if n and n.needs_transform]
     #data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform] / 5)
-    data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform])
+    data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform] * arcsin_factor)
     
     # add extra dims, data:
     legends = [None] * len(dim_names) + extra_legends
@@ -210,6 +210,6 @@ def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[]):
     extra_vals_arr = np.array([extra_vals])
     extra_vals_arr = np.repeat(extra_vals_arr, data.shape[0], axis=0)
     data = np.append(data, extra_vals_arr, axis=1)    
-    load_data_table_CACHE[filename] = biology.datatable.DataTable(data, dim_names, legends)
-    logging.info('Loaded %d cells from file %s' % (load_data_table_CACHE[filename].data.shape[0], filename[:30]))
-  return load_data_table_CACHE[filename]
+    load_data_table_CACHE[(filename, arcsin_factor)] = biology.datatable.DataTable(data, dim_names, legends)
+    logging.info('Loaded %d cells from file %s' % (load_data_table_CACHE[(filename, arcsin_factor)].data.shape[0], filename[:30]))
+  return load_data_table_CACHE[(filename, arcsin_factor)]
