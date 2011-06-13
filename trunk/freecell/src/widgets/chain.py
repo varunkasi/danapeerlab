@@ -20,10 +20,12 @@ from timer import Timer
 from expander import Expander
 from miniexpander import MiniExpander
 from histogram import HistogramPlot
+from loadfcs import LoadFcs
 import plots
 from populationpicker import PopulationPicker
 
 CHAINABLE_WIDGETS = [
+    ('FCS Loader', LoadFcs),
     ('Population Picker', PopulationPicker),
     ('Histogram Plot', HistogramPlot),
     ('Scatter Plot', plots.ScatterPlot),

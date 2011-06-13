@@ -160,6 +160,7 @@ def startup_tests():
     import depends
     print 'FREECELL_DIR in settings file seems to be wrong. Please edit settings/settings.py. You might want to try %s' % os.path.split(os.path.dirname(depends.__file__))[0]
     has_error = True
+    
   return not has_error
   # TODO: check experiments, matlab path.
   

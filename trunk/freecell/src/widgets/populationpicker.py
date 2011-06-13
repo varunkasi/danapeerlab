@@ -17,6 +17,7 @@ class PopulationPicker(Widget):
   def __init__(self, id, parent):
     Widget.__init__(self, id, parent)
     self._add_widget('experiment_select', Select)
+    #self._add_widget('arcsin_factor', Input)
     self._add_widget('apply', ApplyButton)
 
     self.experiment_to_widgets = {}
@@ -112,14 +113,17 @@ class PopulationPicker(Widget):
     
     for w in self.experiment_to_widgets[self.experiment]:
       w.guess_or_remember_choices(w.tag, w.vals, self.__class__.__name__)
+    #if not self.widgets.arcsin_factor.values.value:
+    #  self.widgets.arcsin_factor.values.value = '1'
 
     views = [w.view(w.tag, self.widgets.apply, w.vals) for w in self.experiment_to_widgets[self.experiment]]
     stacked_views = stack_lines(*views)
-      
+ 
     expanded = stack_lines(
         self.widgets.experiment_select.view(
             'Experiment', self.widgets.apply, experiments, False),
         stacked_views,
+#        self.widgets.arcsin_factor.view('Arcsinh Factor', self.widgets.apply, numeric_validation=True, comment='Transformation: arcsinh(value * factor)'),
         View(None, '<p style="clear: both"></p>'),
         self.widgets.apply.view())
     if not enable_expander:

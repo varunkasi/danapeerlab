@@ -18,6 +18,7 @@
 </select>
 {% for group in groups %}
 <button id="{{ id }}_group_{{ forloop.counter }}">{{ group.0 }}</button>
+{{ comment }}
 <script type="text/javascript">
 $(document).ready(function(){
 	$("#{{ id }}_group_{{ forloop.counter }}").button();
