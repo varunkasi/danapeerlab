@@ -18,7 +18,7 @@ class Input(Widget):
   def value_as_float(self):
     return float(self.values.value)
 
-  def view(self, text, apply, predefined_values=[], id=None, numeric_validation=True, comment=''):
+  def view(self, text, apply, predefined_values=[], id=None, numeric_validation=True, comment='', non_empty_validation=True):
     if not id:
       id = self._get_unique_id()
     val = ''   
@@ -31,6 +31,7 @@ class Input(Widget):
         'text' : text, 
         'predefined_values' : predefined_values,
         'numeric_validation' : numeric_validation,
+        'non_empty_validation' : non_empty_validation,
         'comment' : comment,
         'widget_id' : self.id})
     v = View(

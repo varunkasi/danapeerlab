@@ -8,6 +8,7 @@ matplotlib.use('Agg')
 import logging
 import web
 import os
+import cPickle as pickle
 import settings
 from time import gmtime, strftime
 from widgets.graph import Graph
@@ -22,6 +23,8 @@ print 'done imports'
 urls = (
     '/', 'Main',
     '/new_report', 'NewReport', 
+    '/upload_report', 'UploadReport', 
+    '/freecell.chain', 'SaveReport', 
     '/set_value', 'SetValue', 
     '/report', 'ShowReport', 
     '/images/(.*)', 'Images' #this is where the image folder is located....
@@ -51,87 +54,123 @@ class Main:
       return View(None, render('welcome.html', {'reports' : reports})).create_page()
 
 
-class SetValue:
-    def __init__(self):
-      pass
+class SetValue(object):
+  def __init__(self):
+    pass
+    
+  def GET(self):
+    with REPORTS.lock:
+      i = web.input(**{'value[]':[]})
+      r = REPORTS.load(i.report)
+      if 'value' in i:
+        r.set_value(i.widget, i.key, i.value)
+      else:
+        r.set_value(i.widget, i.key, i['value[]'])
+      REPORTS.save(r)
+      return 'ok'
+    #print '***BEFORE SAVE***'
+    #print str(r.widget)
+    #REPORTS.save(r)
+    #r = REPORTS.load(r.id)
+    #print '***AFTER SAVE***'
+    #print str(r.widget)
+    #return 'ok'
+
+class NewReport(object):
+  def __init__(self):
+    pass
+
+  def GET(self):
+    i = web.input()
+    if not 'name' in i:
+      i.name = strftime('%d %b %Y %H:%M:%S', gmtime())
+    if not 'author' in i:
+      i.author = 'unknown'
+    with REPORTS.lock:
+      r = REPORTS.new(i.template, i.name, i.author)
+      raise web.seeother('/report?id=%s' % r.id)
+
+class ShowReport(object):
+  def __init__(self):
+    pass
+    
+  def GET(self):
+    i = web.input()
+    with REPORTS.lock:
+      r = REPORTS.load(i.id)
+    name = 'report requested on %s' % strftime('%d %b %Y %H:%M:%S', gmtime())
+    
+    if not 'min_version' in i:
+      i.min_version  = r.version
+    while True:
+      if i.id in runner.report_id_to_result:
+        report, result = runner.report_id_to_result[i.id]
+        if report.version >= i.min_version:
+          if isinstance(result, Exception):
+            return result
+          return result.create_page()
       
-    def GET(self):
-      with REPORTS.lock:
-        i = web.input(**{'value[]':[]})
-        r = REPORTS.load(i.report)
-        if 'value' in i:
-          r.set_value(i.widget, i.key, i.value)
-        else:
-          r.set_value(i.widget, i.key, i['value[]'])
-        REPORTS.save(r)
-        return 'ok'
-      #print '***BEFORE SAVE***'
-      #print str(r.widget)
-      #REPORTS.save(r)
-      #r = REPORTS.load(r.id)
-      #print '***AFTER SAVE***'
-      #print str(r.widget)
-      #return 'ok'
-
-class NewReport:
-    def __init__(self):
-      pass
-
-    def GET(self):
-      i = web.input()
-      if not 'name' in i:
-        i.name = strftime('%d %b %Y %H:%M:%S', gmtime())
-      if not 'author' in i:
-        i.author = 'unknown'
-      with REPORTS.lock:
-        r = REPORTS.new(i.template, i.name, i.author)
-        raise web.seeother('/report?id=%s' % r.id)
-
-class ShowReport:
-    def __init__(self):
-      pass
+      if not i.id in runner.waiting_report_id_to_request:
+        runner.add_to_queue(name, i.id)
       
-    def GET(self):
-      i = web.input()
-      with REPORTS.lock:
-        r = REPORTS.load(i.id)
-      name = 'report requested on %s' % strftime('%d %b %Y %H:%M:%S', gmtime())
-      
-      if not 'min_version' in i:
-        i.min_version  = r.version
-      while True:
-        if i.id in runner.report_id_to_result:
-          report, result = runner.report_id_to_result[i.id]
-          if report.version >= i.min_version:
-            if isinstance(result, Exception):
-              return result
-            return result.create_page()
-        
-        if not i.id in runner.waiting_report_id_to_request:
-          runner.add_to_queue(name, i.id)
-        
-        with runner.working_lock:
-          pass
+      with runner.working_lock:
+        pass
 
-      return 'not_ready'
+    return 'not_ready'
 
-class Images:
-    def GET(self,name):
-        ext = name.split(".")[-1] # Gather extension
+class Images(object):
+  def GET(self,name):
+      ext = name.split(".")[-1] # Gather extension
 
-        cType = {
-            "png":"images/png",
-            "jpg":"image/jpeg",
-            "gif":"image/gif",
-            "ico":"image/x-icon"            }
+      cType = {
+          "png":"images/png",
+          "jpg":"image/jpeg",
+          "gif":"image/gif",
+          "ico":"image/x-icon"            }
 
-        if name in view.images:  # Security
-            web.header("Content-Type", cType[ext]) # Set the Header
-            view.images[name].seek(0)
-            return view.images[name].read() # Notice 'rb' for reading images
-        else:
-            raise web.notfound()
+      if name in view.images:  # Security
+          web.header("Content-Type", cType[ext]) # Set the Header
+          view.images[name].seek(0)
+          return view.images[name].read() # Notice 'rb' for reading images
+      else:
+          raise web.notfound()
 
+class SaveReport(object):
+  def GET(self):
+    i = web.input()
+    with REPORTS.lock:
+      path = REPORTS.id_to_path(i.id)
+      with open(path, 'rb') as f:
+        web.header("Content-Type", 'application/octet-stream') # Set the Header
+        return f.read()
+
+class UploadReport(object):
+  def POST(self):
+    i = web.input(myfile={})  
+    # A hack to make pickle.load work:
+    print dir(settings)
+    tmp_file = os.path.join(settings.FREECELL_DIR, 'temp', 'temp_report')
+    with open (tmp_file, 'wb') as f:
+      f.write(i['myfile'].file.read())
+    with open (tmp_file, 'r') as f:              
+      base_report = pickle.load(f)
+    if not 'name' in i:
+      i.name = strftime('%d %b %Y %H:%M:%S', gmtime())
+    if not 'author' in i:
+      i.author = 'unknown'
+    with REPORTS.lock:
+      r = REPORTS.new_from_report(base_report, i.name, i.author)
+      raise web.seeother('/report?id=%s' % r.id)   
+
+  def GET(self):
+    i = web.input()
+    with REPORTS.lock:
+        path = REPORTS.id_to_path(i.id)
+        with open(path, 'rb') as f:
+          web.header("Content-Type", 'application/octet-stream') # Set the Header
+          return f.read()
+            
+            
 def startup_tests():
   has_error = False
   try:
@@ -180,8 +219,8 @@ if __name__ == "__main__":
       os.chdir(settings.FREECELL_DIR)
       
       # Use django default settings:
-      from django.conf import settings
-      settings.configure()
+      from django.conf import settings as django_settings
+      django_settings.configure()
       
       # Start report runner
       runner.start()

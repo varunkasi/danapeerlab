@@ -19,6 +19,7 @@ from layout import Layout
 from timer import Timer
 from expander import Expander
 from miniexpander import MiniExpander
+from freecellmenu import FreecellMenu
 from histogram import HistogramPlot
 from loadfcs import LoadFcs
 import plots
@@ -175,7 +176,9 @@ class Chain(Widget):
   def __init__(self, id, parent):
     Widget.__init__(self, id, parent)
     self._add_widget('new_widget_select', Select)
-    self._add_widget('apply', ApplyButton)
+    self._add_widget('apply_new_widget', ApplyButton)
+    self._add_widget('menu', FreecellMenu)
+    
     self.widgets_in_chain = []
     self.widget_counter = 0
   
@@ -237,6 +240,10 @@ class Chain(Widget):
     widgets_view = stack_lines(*views)
     add_view = stack(
         self.widgets.new_widget_select.view(
-            'Add new module', self.widgets.apply, zip(*CHAINABLE_WIDGETS)[0], False),
-        self.widgets.apply.view())
-    return stack_lines(widgets_view, add_view)
+            'Add new module', self.widgets.apply_new_widget, zip(*CHAINABLE_WIDGETS)[0], False),
+        self.widgets.apply_new_widget.view())
+    return stack_lines(
+        self.widgets.menu.view(self.parent.id),
+        widgets_view,
+        view.vertical_seperator(),
+        add_view)

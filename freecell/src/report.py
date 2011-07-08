@@ -53,6 +53,15 @@ class ReportManager(object):
     numbers += [0]
     return ReportManager.base36encode(max(numbers)+1)
   
+  def new_from_report(self, base_report, report_name, author):
+    base_widget = base_report.widget
+    id = self.new_id()
+    new_report = Report(None, report_name, author, id)
+    base_widget.parent = new_report
+    new_report.widget = base_widget
+    self.save(new_report)
+    return new_report
+  
   def new(self, template_name, report_name, author):
     global TEMPLATES
     template = [t for t in TEMPLATES if t.__name__ == template_name]
@@ -89,7 +98,8 @@ class ReportManager(object):
 class Report(object):
   def __init__(self, widget_type, name, author, id):
     self.id = id
-    self.widget = widget_type('base', self)
+    if widget_type:
+      self.widget = widget_type('base', self)
     self.name = name
     self.author = author
     self.version = 0
