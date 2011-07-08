@@ -4,3 +4,8 @@
 <h3> <a href="new_report?template={{ report.type }}">{{ report.name }}</a></h3>
 <h4> {{ report.description }} </h4>
 {% endfor %}
+<h3> Upload a report </h3>
+<form method="POST" enctype="multipart/form-data" action="/upload_report">
+<input type="file" name="myfile" />
+<input type="submit" />
+</form>

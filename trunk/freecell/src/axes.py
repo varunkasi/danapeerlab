@@ -182,30 +182,24 @@ def kde1d_points(ax, points, min_x=None, max_x=None, norm=1):
   return ax
 
 def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1):
-  def cached(data):
-    points = datatable.get_cols(marker)[0]
-    range = np.max(points) - np.min(points)
-    min_x_ = min_x
-    max_x_ = max_x
-    if min_x == None:
-      min_x_ = np.min(points) - range / 10
-    if max_x == None:
-      max_x_ = np.max(points) + range / 10
-    from mlabwrap import mlab
-    data.bandwidth, data.density, data.xmesh = mlab.kde(
-        points, float(2**10), float(min_x_), float(max_x_), nout=3)
-    # TODO(daniv): make sure this line isn't needed on mac
-    #data.xmesh = data.xmesh[0]
-    #print 'den:' + str(np.shape(data.density[0]))
-    #data.density = data.density.T[0]
-    data.density = np.multiply(data.density, float(norm))
-  data = services.cache((datatable, marker, min_x, max_x), cached) 
+  points = datatable.get_cols(marker)[0]
+  range = np.max(points) - np.min(points)
+  min_x_ = min_x
+  max_x_ = max_x
+  if min_x == None:
+    min_x_ = np.min(points) - range / 10
+  if max_x == None:
+    max_x_ = np.max(points) + range / 10
+  from mlabwrap import mlab
+  bandwidth, density, xmesh = mlab.kde(
+      points, float(2**10), float(min_x_), float(max_x_), nout=3)
+  density = np.multiply(density, float(norm))
   #print data.xmesh.shape
   #print data.density.shape
-  ax.plot(data.xmesh, data.density)
+  ax.plot(xmesh, density)
   ax.set_title(marker)
   return ax
-  
+
 def kde2d(
     ax, datatable, markers, range=None, norm_axis=None, norm_axis_thresh = None, res=256):
   

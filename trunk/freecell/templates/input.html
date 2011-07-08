@@ -29,5 +29,15 @@ $(document).ready(function(){
     return true;
   });
 {% endif %}
+{% if non_empty_validation %}	
+	register_validate("{{ saver_id }}", function() {
+    var val = $("#{{ id }}").attr("value");
+    if (val == "") {
+      alert("Value for {{ text }} can't be empty.");
+      return false;
+    }
+    return true;
+  });
+{% endif %}
 });
 </script>

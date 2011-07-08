@@ -53,7 +53,7 @@ class DataTable(AutoReloader):
     """Creates a new data table. This class is immuteable.
     
     data -- a 2 dimension array with the table data
-    dims -- object that are associated with table's columns.
+    dims -- string that are associated with table's columns.
     legends -- a list from dim index to a dictionary that gives string
     representation for numeric values.
     """

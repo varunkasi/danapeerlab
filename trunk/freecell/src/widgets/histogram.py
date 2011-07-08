@@ -53,7 +53,7 @@ class HistogramPlot(Widget):
     if self.widgets.dims.values.choices:
       for dim in self.widgets.dims.values.choices:
         fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
-        ax = fig.add_subplot(111)        
+        ax = fig.add_subplot(111)
         for input in inputs:
           axes.kde1d(ax, tables[input], dim)
         widget_key = self._normalize_id(dim)
