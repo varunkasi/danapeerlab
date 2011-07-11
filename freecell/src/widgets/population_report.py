@@ -19,7 +19,7 @@ from biology.datatable import fake_table
 from biology.datatable import combine_tables
 from biology.datatable import DimRange
 from view import stack_lines
-from scriptservices import cache
+from cache import cache
 from widgets.select import Select
 from widgets.applybutton import ApplyButton
 from widgets.populationpicker import PopulationPicker

@@ -15,12 +15,11 @@ from biology.markers import marker_from_name
 from biology.markers import normalize_markers
 from autoreloader import AutoReloader
 from scriptservices import services
-from scriptservices import cache
+from cache import cache
 from multitimer import MultiTimer
 import hashlib
 
 DimRange = namedtuple('DimRange', ['dim','min', 'max'])
-
 
 
 def fake_table(*args, **kargs):
@@ -49,6 +48,20 @@ def combine_tables(datatables):
   return data.new_table
 
 class DataTable(AutoReloader):
+  """ Represent a table with numeric values. 
+  
+  The values are saved in a numpy matrix, in the 'data' memeber.
+  The column names are saved in 'dims'.
+  Some column values have strings attached to them. A dictionary to convert
+  from numeric value to a string is in the 'legends' list. If a certain 
+  column has no legend, the legened list will contain None in the column's
+  index. Currently, legends are only created for columns that represent tags
+  in an experiment index (see dataindex.py). 
+  
+  To get data from the table use 
+  """
+  
+  
   def __init__(self, data, dims, legends=None, name=''):
     """Creates a new data table. This class is immuteable.
     
@@ -85,6 +98,12 @@ class DataTable(AutoReloader):
     return self.name +' ' + sub_name
 
   def split(self, dim, bins):
+    """ Splits the table into bins datatables. 
+    the range of values for the dim column is splitted. Only rows 
+    which match bin number i will appear in table table number i. 
+    bins can either be a number, or a list of the threshold values for each
+    bin.
+    """
     if type(bins) in (int, complex):
       bins = np.r_[self.min(dim):self.max(dim):bins]
     p = self.get_cols(dim)[0]
@@ -122,6 +141,9 @@ class DataTable(AutoReloader):
     return sum(diff)
 
   def emgm(self, dims, k, auto_centers=False):
+    """ runs emgm clustering on the datatable, result is k datatables
+    with the rows for each cluster.
+    """
     if auto_centers and len(dims)>1:
       raise Exception('k too big')
     
@@ -148,6 +170,9 @@ class DataTable(AutoReloader):
     return tables, llh[0][-1]
 
   def kmeans(self, dims, k):
+    """ runs kmeans on the datatable, result is k datatables
+    with the rows for each cluster.
+    """
     points = self.get_points(*dims)
     from mlabwrap import mlab
     idx = mlab.kmeans(points, k, nout=1)
@@ -174,6 +199,8 @@ class DataTable(AutoReloader):
     return ret
     
   def get_stats(self, dim, prefix=''):
+    """Get various statistics for the datatable.
+    """
     def add_stat(stats, key, val):
       stats[prefix+key] = val
     def get_stat(stats, key):
@@ -211,9 +238,13 @@ class DataTable(AutoReloader):
       return [d for d in self.dims if not marker_from_name(d)] 
   
   def get_cols(self, *dims):
+    """ Gets the specified dims as a list of cols
+    """
     return self.get_points(*dims).T
   
   def get_points(self, *dims):
+    """ Gets the specified dims as a list of rows
+    """
     indices = [self.dims.index(d) for d in dims]
     return self.data[:,indices]    
   
@@ -221,6 +252,8 @@ class DataTable(AutoReloader):
     return DataTable(self.data[rows,:], self.dims)  
   
   def gate2(self, *dim_ranges):
+    """ Gating using kd-tree, deprecated do not use
+    """
     def kd_tree_cache(data):
       points = self.get_points(*[r.dim for r in dim_ranges])
       data.tree = KDTree(points)
@@ -233,6 +266,9 @@ class DataTable(AutoReloader):
     return DataTable(self.data[new_indices], self.dims)
     
   def gate(self, *dim_ranges):
+    """ Gates the table. 
+    Accepts DimRanges which are named tuples of (dim, min, max).
+    """
     relevant_data = self.get_points(*[r.dim for r in dim_ranges])
     mins = np.array([r.min for r in dim_ranges])
     maxes = np.array([r.max for r in dim_ranges])
@@ -242,7 +278,7 @@ class DataTable(AutoReloader):
     return DataTable(self.data[final], self.dims)
 
     
-  def windowed_medians(self, progression_dim, window_size=1000, overlap=500):
+  def windowed_medians(self, progression_dim, window_size=1000, overlap=500):   
     window_size = int(window_size)
     overlap = int(overlap)
     def cache(data):
@@ -258,22 +294,21 @@ class DataTable(AutoReloader):
     return data.table
   
   def log_transform(self):
-    def cache(data):
-      data_copy = np.copy(self.data)      
-      data_copy = np.log(data_copy)
-      data.table = DataTable(data_copy, self.dims)
-    data = services.cache(self, cache)
-    return data.table
+    data_copy = np.copy(self.data)      
+    data_copy = np.log(data_copy)
+    table = DataTable(data_copy, self.dims)
+    return table
 
-  def arcsinh_transform(self):
-    def cache(data):
-      data_copy = np.copy(self.data)      
-      data_copy = np.arcsinh(data_copy / 5)
-      data.table = DataTable(data_copy, self.dims)
-    data = services.cache(self, cache)
-    return data.table
+  def arcsinh_transform(self, factor=0.2):
+    data_copy = np.copy(self.data)      
+    data_copy = np.arcsinh(data_copy * factor)
+    table = DataTable(data_copy, self.dims)   
+    return table
     
   def add_reduced_dims(self, method, no_dims, dims_to_use=None, *args, **kargs):
+    """ Add new columns with values determined by dimensionality reduction
+    algorithms.
+    """
     if not dims_to_use:
       dims_to_use = self.dims
     points = self.get_points(*dims_to_use)
@@ -296,19 +331,26 @@ class DataTable(AutoReloader):
     return DataTable(new_data, new_dims)
     
   def remove_bad_cells(self, *dims):
+    """ Removes rows which have negative values for the specified dims.
+    """
     ranges = [DimRange(d, 0, np.inf) for d in dims]
     return self.gate(*ranges)
 
   @cache('not_so_random_samples')
   def random_sample(self, n):
-    def random_sample_cache(data):
-      indices = random.sample(xrange(np.shape(self.data)[0]), n)
-      data.table = DataTable(self.data[indices], self.dims)
-    data = services.cache((self, n), random_sample_cache)
-    return data.table
+    """ Returns a random sample of n rows from the table. 
+    Note that this is cached in memory, so multiple runs will result 
+    in the same sample.
+    """
+    indices = random.sample(xrange(np.shape(self.data)[0]), n)
+    table = DataTable(self.data[indices], self.dims)
+    return table
   
   @cache('mutual_information_tables')
   def get_mutual_information(self, dims_to_use=None, ignore_negative_values=True):
+    """ Returns a table with mutual information between pairs in dims_to_use. 
+    cell i,j is the  mutual information between dims_to_use[i] and dims_to_use[j]. 
+    """
     from mlabwrap import mlab
     bad_dims = self.get_markers('surface_ignore')
     bad_dims.append('Cell Length')

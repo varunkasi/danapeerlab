@@ -2,7 +2,6 @@
 from widget import Widget
 from view import View
 from view import render
-from view import convert_to_html
 from biology.dataindex import DataIndex
 from django.utils.html import linebreaks
 

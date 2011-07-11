@@ -24,10 +24,18 @@ def get_line_parameters(x1, y1, x2, y2):
   return a, b
 
 class Figure(Widget):
+  """ The Figure widget is used to display matplotlib figures.
+  """
+  
   def __init__(self, id, parent):
     Widget.__init__(self, id, parent)
 
   def view(self, fig, id=None, small_ticks=True):
+    """ fig is a matplotlib figure, which can be created using methods
+    in the axes module (or using matplotlib). It is possible to give
+    and id to the figure, and then refer to this id when attaching an 
+    areaselect widget to the Figure.
+    """
     if small_ticks:
       for ax in fig.get_axes():
         axes.small_ticks(ax)
@@ -53,6 +61,8 @@ class Figure(Widget):
     canvas.print_figure(full_filename, dpi=DPI)
     
     data = {}
+    # The values calculated here are of the linear formula used to convert pixel to data point and vice versa.
+    # This is used by AreaSelect.
     data['a_pixel_x'], data['b_pixel_x'] = get_line_parameters(self.data_point1[0], self.pixel_point1[0], self.data_point2[0], self.pixel_point2[0])
     data['a_pixel_y'], data['b_pixel_y'] = get_line_parameters(self.data_point1[1], self.pixel_point1[1], self.data_point2[1], self.pixel_point2[1])
     data['a_data_x'], data['b_data_x'] = get_line_parameters(self.pixel_point1[0], self.data_point1[0], self.pixel_point2[0], self.data_point2[0])
