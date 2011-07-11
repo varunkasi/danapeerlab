@@ -1,7 +1,4 @@
 ﻿#!/usr/bin/env python
-import os
-import time
-import axes
 import logging
 from odict import OrderedDict
 from widget import Widget
@@ -24,6 +21,73 @@ from histogram import HistogramPlot
 from loadfcs import LoadFcs
 import plots
 from populationpicker import PopulationPicker
+
+""" A chain is a special widget that allows users to create interactive chains
+of modules. This creates a pipeline that manipulates data and displays results
+in the process.
+
+A chain is made of modules. a module is a special kind of a widget (it will be
+defined later). Every module has (optional) inputs and outputs. The users
+connect modules' outputs to modules' inputs. The Chain widget runs the modules
+one by one. Each module displays data, and manipulates data into its outputs.
+
+
+How to create a module
+----------------------
+A module is firstly a regular widget. So It should behave like a widget (see
+widget.py) namely:
+  - Inherit from Widget
+  - Have an __init__ like this: 
+    def __init__(self, id, parent, arg1, arg2, arg3, arg4):
+      Widget.__init__(self, id, parent) 
+  - Have a view method that will display the module's controls and possibly
+    visualization over the data input.
+    The view method receives a **kargs dictionary of the form
+    input_name --> input.
+    It should return a View object like a regular view method for a widget.
+
+A module should also have:
+  - A run method that turns input data to output data. 
+    The run method receives a **kargs dictionary of the form
+    input_name --> input. 
+    It can return None if it doesn't do anything, or return a dictionary of the
+    form output_name --> output.
+  - A get_inputs / get_outputs methods that return a list of inputs/outputs
+    names.
+  - A title(self, short) method that displays the modules title. The short
+    title is used in the input menu when referencing other modules' outputs. 
+
+Lastly, a module should appear in the CHAINABLE_WIDGETS list in this file.
+Simple modules that can be used as exampels are: FcsLoader and Histogram.
+
+Some Notes:
+  - Anything can be passed as input / outputs, but right now we are only using
+    DataTables. This way the user can connect a wrong output to an input by
+    mistake. 
+  - The chain GUI displays a menu to help the user decide which outputs should
+    be directed to which inputs. Some modules can accept None values for 
+    certain inputs. 
+  - The default output to connect to a given input, is the nearest output with
+    the same name as the input.
+  - The menu that lets the user select what output is connected to a certain
+    input, displays module names. If there is more than one output for a 
+    a module, then output names are also displayed. 
+  - The run method can return a special output called 'view'. This output
+    can contain a view that will be appended after the module's box. This is 
+    used to display messages like '500 cells loaded'.
+
+How modules are run
+--------------------
+The chain widget maintains a list of modules. Every module can get inputs 
+from other modules outputs' as long as these modules appear before it in the
+list.
+When the chain widget view method is called, it starts running the chain. 
+Each module is activated in order. First, the view method is called and
+provided with the relevant inptus. Secondly, the run method is called,
+and its outputs are saved for later use. 
+Exceptions in view/run are printed on the report. If there is an exception in 
+run, the chain execution is stopped (as some outputs will probably be missing). 
+"""
 
 CHAINABLE_WIDGETS = [
     ('FCS Loader', LoadFcs),

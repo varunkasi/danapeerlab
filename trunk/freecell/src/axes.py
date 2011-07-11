@@ -1,4 +1,9 @@
-﻿import numpy as np
+﻿#!/usr/bin/env python
+""" This module contains various methods that draw on matplotlib
+axes objects
+"""
+
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from scriptservices import services 
@@ -7,9 +12,13 @@ import matplotlib.cm as cm
 DPI = 100
 
 def new_axes(x_size=256, y_size=256):
+  """ Create a new axes object with the specified size in pixels
+  """
   return Figure(figsize=(x_size / DPI, y_size / DPI)).add_subplot(111)
 
 def new_figure(x_size=256, y_size=256):
+  """ Create a new figure object with the specified size in pixels
+  """
   return Figure(figsize=(x_size / DPI, y_size / DPI))
 
 def small_ticks(ax):
@@ -17,97 +26,66 @@ def small_ticks(ax):
     label.set_fontsize('xx-small')
 
 def points(ax, datatable, markers):
+  """ Creates a 2d scatter plot, each datapoint 
+  will result in a point drawn.
+  """
   points = datatable.get_cols(*markers)
   ax.scatter(points[0], points[1], s=1, marker='o')
   ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
   ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
   ax.figure.subplots_adjust(bottom=0.15)
   
-def scatter_data(datatable, markers, range=None, norm_axis=None, norm_axis_thresh=0, no_bins=512j):
+  
+def histogram_scatter(ax, datatable, markers, range=None, color_marker=None,
+    min_cells_per_bin=1,no_bins=256j):
+  """ Draws a 2d histogram of the given markers in the given range.
+  If a bin has more than min_cells_per_bin, than it is colored black.
+  This gives the same effect as a scatter plot. 
+  range is a tuple in the form: (min_dim_1, min_dim_2, max_dim_1, max_dim_2). 
+  You can also color each bin according to the average value for another dim,
+  among the cells in the bin. This is done using the color_marker parameter.
+  """
   cols = datatable.get_cols(*markers)
   if not range:
-    range = [min(cols[0]), min(cols[1]), max(cols[0]), max(cols[1])]
+    fixed_range = [min(cols[0]), min(cols[1]), max(cols[0]), max(cols[1])]
+  else:
+    fixed_range = range
   hist, x_edges, y_edges = np.histogram2d(
       cols[0], 
       cols[1], 
       [
-          np.r_[range[0]:range[2]:no_bins], 
-          np.r_[range[1]:range[3]:no_bins]])
-  extent=[
-      x_edges[0],
-      x_edges[-1],
-      y_edges[0],
-      y_edges[-1]]
-  
-  if norm_axis == 'y':
-    max_dens_x = np.array([np.max(hist, axis=1)]).T
-    if norm_axis_thresh:
-      max_dens_x[max_dens_x < norm_axis_thresh] = np.inf
-    hist = hist / max_dens_x
-  elif norm_axis == 'x':
-    max_dens_y = np.array([np.max(hist, axis=0)])
-    if norm_axis_thresh:
-      max_dens_y[max_dens_y < norm_axis_thresh] = np.inf
-    hist = hist / max_dens_y
-  return hist, extent, x_edges, y_edges
-  
-def scatter(
-    ax, datatable, markers, range=None, norm_axis=None, norm_axis_thresh=None, no_bins=512j):
-  hist, extent, x_edges, y_edges = scatter_data(datatable, markers, range, norm_axis, norm_axis_thresh, no_bins)
-  image = ax.imshow(hist.T, extent=extent, cmap=cm.gist_yarg, origin='lower')
-  ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
-  ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
-  ax.figure.subplots_adjust(bottom=0.15)
-  #ax.figure.colorbar(image)
-  ax.set_aspect('auto')
-  return ax, hist
-            
-  
-  
-def scatter2(ax, datatable, markers, range=None, color_marker=None,
-    min_cells_per_bin=1,no_bins=256j):
-  def cached(data):
-    cols = datatable.get_cols(*markers)
-    if not range:
-      fixed_range = [min(cols[0]), min(cols[1]), max(cols[0]), max(cols[1])]
-    else:
-      fixed_range = range
-    hist, data.x_edges, data.y_edges = np.histogram2d(
+          np.r_[fixed_range[0]:fixed_range[2]:no_bins], 
+          np.r_[fixed_range[1]:fixed_range[3]:no_bins]])
+  final_hist = np.sign(np.subtract(
+      np.clip(np.abs(hist), min_cells_per_bin, np.inf),
+      min_cells_per_bin))
+  if color_marker:
+    is_colored = True
+    weights = datatable.get_cols(color_marker)[0]     
+    weighted_hist, x_edges, y_edges = np.histogram2d(
         cols[0], 
         cols[1], 
         [
             np.r_[fixed_range[0]:fixed_range[2]:no_bins], 
-            np.r_[fixed_range[1]:fixed_range[3]:no_bins]])
-    data.final_hist = np.sign(np.subtract(
-        np.clip(np.abs(hist), min_cells_per_bin, np.inf),
-        min_cells_per_bin))
-    if color_marker:
-      data.is_colored = True
-      weights = datatable.get_cols(color_marker)[0]     
-      weighted_hist, x_edges, y_edges = np.histogram2d(
-          cols[0], 
-          cols[1], 
-          [
-              np.r_[fixed_range[0]:fixed_range[2]:no_bins], 
-              np.r_[fixed_range[1]:fixed_range[3]:no_bins]], None, False, weights)
-      averages = np.true_divide(weighted_hist, hist)
-      averages[np.isnan(averages)] = np.NaN
-      averages[data.final_hist == 0] = np.NaN
-      data.colored_hist = averages
-    else:
-      data.is_colored = False
-  data = services.cache((datatable, markers, range, color_marker), cached)  
-  if data.is_colored:
-    data_to_draw = data.colored_hist
+            np.r_[fixed_range[1]:fixed_range[3]:no_bins]], None, False, weights)
+    averages = np.true_divide(weighted_hist, hist)
+    averages[np.isnan(averages)] = np.NaN
+    averages[final_hist == 0] = np.NaN
+    colored_hist = averages
+  else:
+    is_colored = False
+
+  if is_colored:
+    data_to_draw = colored_hist
     cmap = cm.jet
   else:
-    data_to_draw = data.final_hist
+    data_to_draw = final_hist
     cmap = cm.gist_yarg
   extent=[
-        data.x_edges[0],
-        data.x_edges[-1],
-        data.y_edges[0],
-        data.y_edges[-1]]
+        x_edges[0],
+        x_edges[-1],
+        y_edges[0],
+        y_edges[-1]]
   image = ax.imshow(data_to_draw.T, extent=extent, cmap=cmap, origin='lower')
   ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
   ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
@@ -129,6 +107,10 @@ def remove_ticks(ax):
   
 def kde2d_color_hist(
     fig, datatable, markers, range, norm_axis=None, norm_axis_thresh = None, res=256):
+  """ Draws a kerenel density plot, along with two bars on the x and y axes. The bars
+  give a color for every row/col, the colors represent the sum of densities along 
+  the rows/cols so they are basically a 1d historgams.
+  """
   ax_main = fig.add_subplot(111, axisbg=cm.jet(0))
   #ax_main.set_aspect(1.)
   divider = make_axes_locatable(ax_main)
@@ -164,24 +146,11 @@ def kde2d_color_hist(
   #print '*'
   
   
-def kde1d_points(ax, points, min_x=None, max_x=None, norm=1):
-  range = np.max(points) - np.min(points)
-  min_x_ = min_x
-  max_x_ = max_x
-  if min_x == None:
-    min_x_ = np.min(points) - range / 10
-  if max_x == None:
-    max_x_ = np.max(points) + range / 10
-  from mlabwrap import mlab
-  bandwidth, density, xmesh = mlab.kde(
-      np.array([points]).T, float(2**12), float(min_x_), float(max_x_), nout=3)
-  xmesh = xmesh[0]
-  density = density.T[0]
-  density = np.multiply(density, float(norm))
-  ax.plot(xmesh, density)
-  return ax
 
 def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1):
+  """ Draws a 1d kernel density estimation  histogram. 
+  The values in the plot are multiplied by the norm parameter.
+  """
   points = datatable.get_cols(marker)[0]
   range = np.max(points) - np.min(points)
   min_x_ = min_x
@@ -255,3 +224,60 @@ def kde2d_data(
       data.Y[-1,0]]    
   return display_data, extent, data.density, data.X, data.Y
 
+######### Everything above this is probably deprecated #########
+def scatter_data(datatable, markers, range=None, norm_axis=None, norm_axis_thresh=0, no_bins=512j):
+  cols = datatable.get_cols(*markers)
+  if not range:
+    range = [min(cols[0]), min(cols[1]), max(cols[0]), max(cols[1])]
+  hist, x_edges, y_edges = np.histogram2d(
+      cols[0], 
+      cols[1], 
+      [
+          np.r_[range[0]:range[2]:no_bins], 
+          np.r_[range[1]:range[3]:no_bins]])
+  extent=[
+      x_edges[0],
+      x_edges[-1],
+      y_edges[0],
+      y_edges[-1]]
+  
+  if norm_axis == 'y':
+    max_dens_x = np.array([np.max(hist, axis=1)]).T
+    if norm_axis_thresh:
+      max_dens_x[max_dens_x < norm_axis_thresh] = np.inf
+    hist = hist / max_dens_x
+  elif norm_axis == 'x':
+    max_dens_y = np.array([np.max(hist, axis=0)])
+    if norm_axis_thresh:
+      max_dens_y[max_dens_y < norm_axis_thresh] = np.inf
+    hist = hist / max_dens_y
+  return hist, extent, x_edges, y_edges
+  
+def scatter(
+    ax, datatable, markers, range=None, norm_axis=None, norm_axis_thresh=None, no_bins=512j):
+  hist, extent, x_edges, y_edges = scatter_data(datatable, markers, range, norm_axis, norm_axis_thresh, no_bins)
+  image = ax.imshow(hist.T, extent=extent, cmap=cm.gist_yarg, origin='lower')
+  ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
+  ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
+  ax.figure.subplots_adjust(bottom=0.15)
+  #ax.figure.colorbar(image)
+  ax.set_aspect('auto')
+  return ax, hist
+
+def kde1d_points(ax, points, min_x=None, max_x=None, norm=1):
+  range = np.max(points) - np.min(points)
+  min_x_ = min_x
+  max_x_ = max_x
+  if min_x == None:
+    min_x_ = np.min(points) - range / 10
+  if max_x == None:
+    max_x_ = np.max(points) + range / 10
+  from mlabwrap import mlab
+  bandwidth, density, xmesh = mlab.kde(
+      np.array([points]).T, float(2**12), float(min_x_), float(max_x_), nout=3)
+  xmesh = xmesh[0]
+  density = density.T[0]
+  density = np.multiply(density, float(norm))
+  ax.plot(xmesh, density)
+  return ax
+######### End of this is probably deprecated #########

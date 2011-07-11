@@ -1,8 +1,8 @@
 ﻿<b>{{ text }}</b><br />
 <input type="text" name="{{ id }}" id="{{ id }}" value="{{ value }}" />
+{{ comment }}
 {% for group in predefined_values %}
 <button id="{{ id }}_group_{{ forloop.counter }}">{{ group.0 }}</button>
-{{ comment }}
 <script type="text/javascript">
 $(document).ready(function(){
 	$("#{{ id }}_group_{{ forloop.counter }}").button();

@@ -24,7 +24,7 @@ from leftpanel import LeftPanel
 from areaselect import AreaSelect
 from odict import OrderedDict
 from table import Table
-from scriptservices import cache
+from cache import cache
 
     
 class AbstractPlot(Widget):
@@ -288,7 +288,7 @@ class ScatterPlot(AbstractPlot):
         color = None
       fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
       ax = fig.add_subplot(111)
-      axes.scatter2(ax, table, (dim_x, dim_y), range, color, min_cells_per_bin = min_cells, no_bins=no_bins)
+      axes.histogram_scatter(ax, table, (dim_x, dim_y), range, color, min_cells_per_bin = min_cells, no_bins=no_bins)
       ret[str(color)] = fig
     return ret
 

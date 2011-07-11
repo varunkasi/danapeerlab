@@ -8,7 +8,7 @@ from depends import fix_path
 fix_path(True)
 
 from scriptservices import services
-from scriptservices import cache
+from cache import cache
 from biology.datatable import DataTable
 from biology.datatable import combine_tables
 from biology.loaddatatable import load_data_table

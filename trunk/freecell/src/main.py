@@ -1,4 +1,21 @@
 #!/usr/bin/env python
+""" Freecell is a flexible infrastructure to generate interactive reports for
+data analysis. It currently supports Cytof data. 
+
+Freecell has a low level programmatic interface to generate reports using
+Widgets (see src/widget.py). It also has a high level graphical user interface 
+that allows creating reports by chaining together modules (see 
+src/widgets/chain.py). 
+
+Some of the services Freecell provides are:
+  - Interaction with Cytof data (see src/biology/datatable.py)
+  - Caching (see caching.py)
+  - Functions for plotting data (see src/axes.py)
+  - Full matlab integration (see depends/common/python/mlabwrap.py)
+
+"""
+
+
 from depends import fix_path
 print 'Fixing Path'
 fix_path(True)
@@ -65,6 +82,7 @@ class SetValue(object):
       if 'value' in i:
         r.set_value(i.widget, i.key, i.value)
       else:
+        # This will save the values as a list.
         r.set_value(i.widget, i.key, i['value[]'])
       REPORTS.save(r)
       return 'ok'
