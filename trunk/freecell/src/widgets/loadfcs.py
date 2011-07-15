@@ -54,6 +54,7 @@ class LoadFcs(Widget):
     ret = {}
     # This is the only output -- the loaded datatable. 
     ret['table'] = load_data_table(self.widgets.fcs_location.value_as_str(), arcsin_factor=self.widgets.arcsin_factor.value_as_float())
+    ret['table'].name = os.path.split(self.widgets.fcs_location.value_as_str())[1]
     # We want to display a little log message after the module's box:
     ret['view'] = 'Loaded %d cells' % ret['table'].num_cells
     return ret

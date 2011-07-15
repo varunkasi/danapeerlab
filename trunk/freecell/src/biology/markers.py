@@ -54,9 +54,10 @@ def normalize_marker_name(name):
 def marker_from_name(name):
   norm_name = normalize_marker_name(name)
   if not norm_name in _name_to_marker:
-    pass
+    print norm_name
+    _name_to_marker[norm_name] = Marker([name], 'other', True)
     #logging.error('Could not find marker name %s (%s)' % (name, norm_name))
-  return _name_to_marker.get(norm_name, None)
+  return _name_to_marker.get(norm_name)
 
 def is_marker_registered(name):
   return name in _name_to_marker
@@ -89,7 +90,15 @@ def normalize_markers(markers):
 def get_markers(*groups):
   global _name_to_marker
   return [m.names[0] for m in _name_to_marker.values() if m.group in groups]
-  
+
+
+GROUP_TO_TEXT = [
+    ('t-sne', 't-SNE Markers'),
+    ('signal', 'Signal Markers'),
+    ('surface', 'Surface Markers')]
+
+HIDDEN_GROUPS = ['surface_ignore', 'signal_ignore']
+    
 class Markers:  
   #FSC_A = register_marker('FSC-A')
   #FSC_W	= register_marker('FSC-W')
@@ -108,9 +117,9 @@ class Markers:
   #Qdot605_A	= register_marker('Qdot605-A')
   #Qdot655_A	= register_marker('Qdot655-A')
   #Qdot705_A	= register_marker('Qdot705-A')
-  T_SNE_1	= register_marker(('t-SNE 1',), 'other', False)
-  T_SNE_2	= register_marker(('t-SNE 2',), 'other', False)
-  sample_source	= register_marker(('sample_source',), 'other', False)
+  T_SNE_1	= register_marker(('t-SNE 1',), 't-sne', False)
+  T_SNE_2	= register_marker(('t-SNE 2',), 't-sne', False)
+  sample_source	= register_marker(('sample_source',), 't-sne', False)
   Time	= register_marker(('Time',), 'technical', False)
   Cell_length = register_marker(('Cell Length', 'Cell_length'), 'technical', False)
   DNA_191 = register_marker(('DNA-191', '191-DNA', 'DNA1'), 'signal_ignore')

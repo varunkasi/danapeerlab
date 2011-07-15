@@ -22,7 +22,7 @@ class PopulationPicker(Widget):
     self.experiment_to_widgets = {}
     self.experiment = None
     self.data = None
-    self.summary = "Population Picker"
+    self.summary = ''
 
   def _get_index(self):
     if not self.experiment:
@@ -37,7 +37,7 @@ class PopulationPicker(Widget):
     if short:           
       return self.experiment
     else:
-      return self.summary
+      return 'Population Picker: %s' % self.summary
 
   def get_inputs(self):
     return []
@@ -47,7 +47,10 @@ class PopulationPicker(Widget):
 
   def run(self):
     ret = {}
+    
     ret['table'] = self.get_data()
+    ret['table'].name = self.summary
+    ret['view'] = 'Loaded %d cells' % ret['table'].num_cells        
     return ret
 
   def get_data(self, count=False):
@@ -70,7 +73,7 @@ class PopulationPicker(Widget):
     self.experiment = self.widgets.experiment_select.values.choices[0]
     
     if not self.experiment in self.experiment_to_widgets:
-      self.summary = 'Population Picker: Please select population for experiment %s' % self.experiment
+      self.summary = 'Please select population for experiment %s' % self.experiment
       return
       
     index = self._get_index()
@@ -83,11 +86,10 @@ class PopulationPicker(Widget):
       #if set(index.all_values_for_tag(w.tag)) == set(w.values.choices):
       #  return '%s: any' % w.tag
       #return '%s: %s' % (w.tag, ', '.join(w.values.choices))
-    self.summary = 'Population Picker: %s %s %d cells' % (
+    self.summary = '%s %s' % (
         self.experiment,
         ' '.join(
-            [summary_from_widget(w, index) for w in self.experiment_to_widgets.get(self.experiment, [])]),
-            self.get_data(True))
+            [summary_from_widget(w, index) for w in self.experiment_to_widgets.get(self.experiment, [])]))    
 
   def view(self, enable_expander=False):
     experiments = settings.EXPERIMENTS.keys()

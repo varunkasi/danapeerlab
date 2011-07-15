@@ -10,6 +10,7 @@ from view import View
 from view import render
 from biology.dataindex import DataIndex
 from biology.datatable import DimRange
+from biology.datatable import dim_range_to_str
 from django.utils.html import linebreaks
 import settings
 import StringIO
@@ -32,6 +33,7 @@ class AbstractPlot(Widget):
     Widget.__init__(self, id, parent)
     self._add_widget('dim_x', Select)
     self._add_widget('dim_y', Select)
+    self._add_widget('negative_values', Select)
 #    self._add_widget('min_x', Input)
 #    self._add_widget('min_y', Input)
 #    self._add_widget('max_x', Input)
@@ -47,6 +49,10 @@ class AbstractPlot(Widget):
     self._add_widget('input_table', Table)
     self.enable_gating = enable_gating
 
+  def on_load(self):
+    if not 'negative_values' in self.widgets:
+      self._add_widget('negative_values', Select)
+  
   def name(self):
     raise Exception('Not Implemented')
 
@@ -57,12 +63,18 @@ class AbstractPlot(Widget):
     raise Exception('Not Implemented')
 
   @cache('plots')
-  def _draw_figures(self, table, dim_x_arr, dim_y_arr):
+  def _draw_figures(self, table, dim_x_arr, dim_y_arr, table_for_range, remove_negative):
     ret = OrderedDict()
     for dim_x in dim_x_arr:
       for dim_y in dim_y_arr:
-        range = (table.min(dim_x), table.min(dim_y), table.max(dim_x), table.max(dim_y))
-        figures = self.draw_figures(table, dim_x, dim_y, range)
+        if remove_negative:
+          fixed_table = table.remove_bad_cells(dim_x, dim_y)
+          fixed_range = table_for_range.remove_bad_cells(dim_x, dim_y)
+        else:
+          fixed_table = table
+          fixed_range = table_for_range
+        range = (fixed_range.min(dim_x), fixed_range.min(dim_y), fixed_range.max(dim_x), fixed_range.max(dim_y))
+        figures = self.draw_figures(fixed_table, dim_x, dim_y, range)
         for key, val in figures.iteritems():
           ret['%s_%s_%s' % (dim_x, dim_y, key)] = val
     return ret
@@ -90,7 +102,10 @@ class AbstractPlot(Widget):
           ', '.join(dim_y))
           
   def get_inputs(self):
-    return ['table', 'table2', 'table3', 'table4']
+    if not self.enable_gating:
+      return ['table', 'table2', 'table3', 'table4']
+    else:
+      return ['table']
     
   def get_outputs(self):
     if not self.enable_gating:
@@ -113,9 +128,10 @@ class AbstractPlot(Widget):
     gate_max_y = self.widgets.gate_max_y.value_as_float()
     if gate_min_x > table.min(dim_x) or gate_max_x  < table.max(dim_x) or gate_min_y > table.min(dim_y) or gate_max_y  < table.max(dim_y):
       data = {}
-      data['table'] = table.gate(
-          DimRange(dim_x, gate_min_x, gate_max_x),
-          DimRange(dim_y, gate_min_y, gate_max_y))
+      range_x = DimRange(dim_x, gate_min_x, gate_max_x)
+      range_y = DimRange(dim_y, gate_min_y, gate_max_y)
+      data['table'] = table.gate(range_x, range_y)
+      data['table'].name = '%s | %s, %s' % (table.name, dim_range_to_str(range_x), dim_range_to_str(range_y))
       data['view'] = View(self, 'Table gated, %d cells left' % data['table'].num_cells)
       return data
     
@@ -124,6 +140,11 @@ class AbstractPlot(Widget):
     table = tables['table']
     self.widgets.dim_x.guess_or_remember_choices('X Axis', options_from_table(table), self.__class__.__name__)
     self.widgets.dim_y.guess_or_remember_choices('Y Axis', options_from_table(table), self.__class__.__name__)
+    self.widgets.negative_values.guess_or_remember_choices('Negative Values', ['Keep', 'Remove'], self.__class__.__name__)
+    if not self.widgets.negative_values.values.choices:
+      self.widgets.negative_values.values.choices = ['Remove']
+    if self.enable_gating:
+      self.widgets.negative_values.values.choices = ['Keep']
     if not self._dims_ready(table):
       control_panel_view = stack_lines(
           self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
@@ -188,6 +209,7 @@ class AbstractPlot(Widget):
       control_panel_view = stack_lines(
           self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
           self.widgets.dim_y.view('Y Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
+          self.widgets.negative_values.view('Negative Values', self.widgets.apply,['Keep', 'Remove'], False),
           self.control_panel(table),
           self.widgets.apply.view())
     try:
@@ -195,11 +217,16 @@ class AbstractPlot(Widget):
       inputs = [input for input in self.get_inputs() if tables[input]]
       with Timer('draw figures'):
         for input in inputs:
-          id_to_fig.append(self._draw_figures(tables[input], dim_x, dim_y))
+          id_to_fig.append(self._draw_figures(tables[input], dim_x, dim_y, tables[inputs[0]], 'Remove' in self.widgets.negative_values.values.choices))
       if self.enable_gating:
         assert len(id_to_fig[0]) == 1
         fig = id_to_fig[0].values()[0]
-        main_view = self.widgets.figure.view(fig, id=custom_figure_id)
+        # Other than figure, the sub functions can also send an extra view. In this case
+        # fig will be tuple. 
+        if type(fig) == tuple:
+          main_view = stack_lines(self.widgets.figure.view(fig[0], id=custom_figure_id), fig[1])
+        else:
+          main_view = self.widgets.figure.view(fig, id=custom_figure_id)
       else:
         lines = []
         for key in id_to_fig[0].iterkeys():
@@ -209,12 +236,20 @@ class AbstractPlot(Widget):
             if not widget_key in self.widgets:
               self._add_widget(widget_key, Figure)
             fig = id_to_fig[i][key]
-            line.append(self.widgets[widget_key].view(fig))
+            # Other than figure, the sub functions can also send an extra view. In this case
+            # fig will be tuple. 
+            if type(fig) == tuple:
+              box_view = stack_lines(
+                  self.widgets[widget_key].view(fig[0]), fig[1])
+            else:
+              box_view = self.widgets[widget_key].view(fig)
+            line.append(box_view)
+            
           lines.append(line)
         if len(inputs) == 1:
           main_view = view.stack_left(*[l[0] for l in lines])
         else:
-          main_view = self.widgets.input_table.view(inputs, lines)
+          main_view = self.widgets.input_table.view([tables[input].name for input in inputs], lines)
     except Exception as e:
       main_view = View(self, str(e))
       logging.exception('Exception while drawing %s' % self.name())
@@ -245,14 +280,15 @@ class FunctionPlot(AbstractPlot):
     
   def control_panel(self, table): 
     if self.widgets.min_density_in_column.values.value == None:
-      self.widgets.min_density_in_column.values.value = '0'
+      self.widgets.min_density_in_column.values.value = '0.005'
     return stack_lines(
         self.widgets.min_density_in_column.view('Minimal density in column', self.widgets.apply))
 
   def draw_figures(self, table, dim_x, dim_y, range):
     fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
-    axes.kde2d_color_hist(fig, table, (dim_x, dim_y), range, 'y', self.widgets.min_density_in_column.value_as_float())
-    return {'fig': fig}
+    axes.kde2d_color_hist(fig, table, (dim_x, dim_y), range, 'y', self.widgets.min_density_in_column.value_as_float())    
+    corr_view = View(None, 'corr: %.2f' % table.get_correlation(dim_x, dim_y))
+    return {'fig': (fig, corr_view)}
 
 class ScatterPlot(AbstractPlot):
   def __init__(self, id, parent, gate=False):
