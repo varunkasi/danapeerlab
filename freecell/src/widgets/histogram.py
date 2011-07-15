@@ -81,8 +81,10 @@ class HistogramPlot(Widget):
         fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
         ax = fig.add_subplot(111)
         # Draw the histogram for every input (matplotlib will know to switch colors)
+        plots = []
         for input in inputs:
-          axes.kde1d(ax, tables[input], dim)
+          plots.append(axes.kde1d(ax, tables[input], dim))
+        ax.legend(plots, [tables[input].name for input in inputs], prop={'size' : 'xx-small'})
         # Make sure we don't create the same widget twice. We create a new widget
         # for every dimension asked. 
         widget_key = self._normalize_id(dim)

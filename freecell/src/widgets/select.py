@@ -9,23 +9,24 @@ from widget import Widget
 from view import View
 from view import render
 from biology.dataindex import DataIndex
+from biology.markers import GROUP_TO_TEXT
+from biology.markers import HIDDEN_GROUPS
 from django.utils.html import linebreaks
 
 def options_from_table(table):
-    other_markers = table.get_markers('other')
-    signal_markers = table.get_markers('signal')
-    surface_markers = table.get_markers('surface')
-    none_markers = table.get_markers_not_in_groups('other', 'signal', 'surface', 'surface_ignore', 'signal_ignore')
-    return [
-        ('t-SNE', sorted(other_markers)),
-        ('Surface Markers', sorted(surface_markers)),
-        ('Signal Markers', sorted(signal_markers)),
-        ('', sorted(none_markers))]
+    ret = []
+    for group_code, group_text in GROUP_TO_TEXT:
+      if table.get_markers(group_code):
+        ret.append((group_text, sorted(table.get_markers(group_code))))
+    groups_to_ignore = HIDDEN_GROUPS + [g[0] for g in GROUP_TO_TEXT]
+    if table.get_markers_not_in_groups(*groups_to_ignore):
+      ret.append(('', sorted(table.get_markers_not_in_groups(*groups_to_ignore))))
+    return ret
     
 class Select(Widget):
   """ The select widget shows a combo box menu. 
   You can select one item or multiple items.
-  When the user selects values, they are saved as a list in Select.values.choices.  
+  When the user selects values, they are saved as a list in Select.values.choices.
   Note: The selected values are saved as a list thanks to the set_value method in main.py
   which supports lists.
   The widget can also offer a default value for choices based on previous selection

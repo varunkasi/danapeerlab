@@ -20,6 +20,8 @@ from multitimer import MultiTimer
 import hashlib
 
 DimRange = namedtuple('DimRange', ['dim','min', 'max'])
+def dim_range_to_str(dim_range):
+  return '[%.2f < %s < %.2f]' % (dim_range.min, dim_range.dim, dim_range.max)
 
 
 def fake_table(*args, **kargs):
@@ -197,9 +199,12 @@ class DataTable(AutoReloader):
     ret = DataTable(new_data, new_dims, self.legends)
     ret.properties['original_table'] = self
     return ret
-    
+
+  def get_correlation(self, dim1, dim2):
+    return np.corrcoef(self.get_cols(dim1), self.get_cols(dim2))[0,1]
+  
   def get_stats(self, dim, prefix=''):
-    """Get various statistics for the datatable.
+    """Get various 1d statistics for the datatable.
     """
     def add_stat(stats, key, val):
       stats[prefix+key] = val

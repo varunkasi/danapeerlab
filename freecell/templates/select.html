@@ -1,4 +1,6 @@
-﻿<b>{{ text }}</b><br />
+﻿{% if text %}
+<b>{{ text }}</b><br />
+{% endif %}
 <select id="{{ id }}_select" class="multiselect" {% if multiple %}multiple="multiple"{% endif %}>
 {% for group, group_items in items %}
 {% if group != "None" %}

@@ -165,9 +165,9 @@ def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1):
   density = np.multiply(density, float(norm))
   #print data.xmesh.shape
   #print data.density.shape
-  ax.plot(xmesh, density)
+  plot = ax.plot(xmesh, density)
   ax.set_title(marker)
-  return ax
+  return plot
 
 def kde2d(
     ax, datatable, markers, range=None, norm_axis=None, norm_axis_thresh = None, res=256):
