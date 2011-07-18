@@ -135,8 +135,8 @@ def kde2d_color_hist(
   image = ax_hist_x.imshow(np.log([x_hist]), extent=(X[0,0], X[0,-1], 0, 1), cmap=cm.jet, origin='lower')
   y_hist, y_top_edges = np.histogram(datatable.get_cols(markers[1]), bins=Y[:,0])
   image = ax_hist_y.imshow(np.log([y_hist]).T, extent=(0,1,Y[0,0], Y[-1,0]), cmap=cm.jet, origin='lower')
-  ax_main.set_xlabel(str(markers[0]) + '   ', size='x-small')
-  ax_main.set_ylabel(str(markers[1]) + '   ', size='x-small')
+  ax_main.set_xlabel(str(markers[0]) + '   ', size='small')
+  ax_main.set_ylabel(str(markers[1]) + '   ', size='small')
   ax_main.figure.subplots_adjust(bottom=0.15)
 
   #for i in xrange(len(X[0])):

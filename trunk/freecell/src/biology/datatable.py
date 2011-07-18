@@ -21,7 +21,7 @@ import hashlib
 
 DimRange = namedtuple('DimRange', ['dim','min', 'max'])
 def dim_range_to_str(dim_range):
-  return '[%.2f < %s < %.2f]' % (dim_range.min, dim_range.dim, dim_range.max)
+  return '[%.3f < %s < %.3f]' % (dim_range.min, dim_range.dim, dim_range.max)
 
 
 def fake_table(*args, **kargs):
@@ -203,6 +203,12 @@ class DataTable(AutoReloader):
   def get_correlation(self, dim1, dim2):
     return np.corrcoef(self.get_cols(dim1), self.get_cols(dim2))[0,1]
   
+  def get_mutual_information(self, dim1, dim2):
+    from mlabwrap import mlab
+    return mlab.mutualinfo_ap(self.get_points(dim1, dim2), nout=1)
+
+    return np.corrcoef(self.get_cols(dim1), self.get_cols(dim2))[0,1]
+
   def get_stats(self, dim, prefix=''):
     """Get various 1d statistics for the datatable.
     """
@@ -352,7 +358,7 @@ class DataTable(AutoReloader):
     return table
   
   @cache('mutual_information_tables')
-  def get_mutual_information(self, dims_to_use=None, ignore_negative_values=True):
+  def get_mutual_information_table(self, dims_to_use=None, ignore_negative_values=True):
     """ Returns a table with mutual information between pairs in dims_to_use. 
     cell i,j is the  mutual information between dims_to_use[i] and dims_to_use[j]. 
     """

@@ -4,6 +4,7 @@ import time
 import logging
 import axes
 import view
+import numpy as np
 from timer import Timer
 from widget import Widget
 from view import View
@@ -63,16 +64,12 @@ class AbstractPlot(Widget):
     raise Exception('Not Implemented')
 
   @cache('plots')
-  def _draw_figures(self, table, dim_x_arr, dim_y_arr, table_for_range, remove_negative):
+  def _draw_figures(self, table, dim_x_arr, dim_y_arr, table_for_range, min_val):
     ret = OrderedDict()
     for dim_x in dim_x_arr:
       for dim_y in dim_y_arr:
-        if remove_negative:
-          fixed_table = table.remove_bad_cells(dim_x, dim_y)
-          fixed_range = table_for_range.remove_bad_cells(dim_x, dim_y)
-        else:
-          fixed_table = table
-          fixed_range = table_for_range
+        fixed_table = table.gate(DimRange(dim_x, min_val, np.inf), DimRange(dim_y, min_val, np.inf))
+        fixed_range = table_for_range.gate(DimRange(dim_x, min_val, np.inf), DimRange(dim_y, min_val, np.inf))
         range = (fixed_range.min(dim_x), fixed_range.min(dim_y), fixed_range.max(dim_x), fixed_range.max(dim_y))
         figures = self.draw_figures(fixed_table, dim_x, dim_y, range)
         for key, val in figures.iteritems():
@@ -140,11 +137,11 @@ class AbstractPlot(Widget):
     table = tables['table']
     self.widgets.dim_x.guess_or_remember_choices('X Axis', options_from_table(table), self.__class__.__name__)
     self.widgets.dim_y.guess_or_remember_choices('Y Axis', options_from_table(table), self.__class__.__name__)
-    self.widgets.negative_values.guess_or_remember_choices('Negative Values', ['Keep', 'Remove'], self.__class__.__name__)
+    self.widgets.negative_values.guess_or_remember_choices('Remove Values', ['Keep Everything', 'Remove Negative', 'Remove > 2'], self.__class__.__name__)
     if not self.widgets.negative_values.values.choices:
-      self.widgets.negative_values.values.choices = ['Remove']
+      self.widgets.negative_values.values.choices = ['Remove > 2']
     if self.enable_gating:
-      self.widgets.negative_values.values.choices = ['Keep']
+      self.widgets.negative_values.values.choices = ['Keep Everything']
     if not self._dims_ready(table):
       control_panel_view = stack_lines(
           self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
@@ -209,7 +206,7 @@ class AbstractPlot(Widget):
       control_panel_view = stack_lines(
           self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
           self.widgets.dim_y.view('Y Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
-          self.widgets.negative_values.view('Negative Values', self.widgets.apply,['Keep', 'Remove'], False),
+          self.widgets.negative_values.view('Remove Values', self.widgets.apply, ['Keep Everything', 'Remove Negative', 'Remove > 2'], False),
           self.control_panel(table),
           self.widgets.apply.view())
     try:
@@ -217,7 +214,13 @@ class AbstractPlot(Widget):
       inputs = [input for input in self.get_inputs() if tables[input]]
       with Timer('draw figures'):
         for input in inputs:
-          id_to_fig.append(self._draw_figures(tables[input], dim_x, dim_y, tables[inputs[0]], 'Remove' in self.widgets.negative_values.values.choices))
+          if 'Remove Negative' in self.widgets.negative_values.values.choices:
+            min_val = 0
+          elif 'Keep Everything' in self.widgets.negative_values.values.choices:
+            min_val = -np.inf
+          elif 'Remove > 2' in self.widgets.negative_values.values.choices:
+            min_val = 2
+          id_to_fig.append(self._draw_figures(tables[input], dim_x, dim_y, tables[inputs[0]], min_val))
       if self.enable_gating:
         assert len(id_to_fig[0]) == 1
         fig = id_to_fig[0].values()[0]
@@ -287,7 +290,7 @@ class FunctionPlot(AbstractPlot):
   def draw_figures(self, table, dim_x, dim_y, range):
     fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
     axes.kde2d_color_hist(fig, table, (dim_x, dim_y), range, 'y', self.widgets.min_density_in_column.value_as_float())    
-    corr_view = View(None, 'corr: %.2f' % table.get_correlation(dim_x, dim_y))
+    corr_view = View(None, 'corr: %.2f; mi: %.2f' % (table.get_correlation(dim_x, dim_y), table.get_mutual_information(dim_x, dim_y)))
     return {'fig': (fig, corr_view)}
 
 class ScatterPlot(AbstractPlot):
