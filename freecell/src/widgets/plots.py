@@ -135,9 +135,9 @@ class AbstractPlot(Widget):
   
   def view(self, **tables):
     table = tables['table']
-    self.widgets.dim_x.guess_or_remember_choices('X Axis', options_from_table(table), self.__class__.__name__)
-    self.widgets.dim_y.guess_or_remember_choices('Y Axis', options_from_table(table), self.__class__.__name__)
-    self.widgets.negative_values.guess_or_remember_choices('Remove Values', ['Keep Everything', 'Remove Negative', 'Remove > 2'], self.__class__.__name__)
+    self.widgets.dim_x.guess_or_remember(('X Axis', options_from_table(table), self.__class__.__name__))
+    self.widgets.dim_y.guess_or_remember(('Y Axis', options_from_table(table), self.__class__.__name__))
+    self.widgets.negative_values.guess_or_remember(('Remove Values', ['Keep Everything', 'Remove Negative', 'Remove > 2'], self.__class__.__name__))
     if not self.widgets.negative_values.values.choices:
       self.widgets.negative_values.values.choices = ['Remove > 2']
     if self.enable_gating:

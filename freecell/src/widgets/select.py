@@ -30,27 +30,27 @@ class Select(Widget):
   Note: The selected values are saved as a list thanks to the set_value method in main.py
   which supports lists.
   The widget can also offer a default value for choices based on previous selection
-  of the user. This is done by the guess_or_remember_choices method.
+  of the user. This is done by the guess_or_remember method.
   """
   def __init__(self, id, parent):
     Widget.__init__(self, id, parent)
     self.values.choices = None
 
-  def guess_or_remember_choices(self, text, options, guess_hint=''):
+  def guess_or_remember(self, key, default_value=None):
     """ Used to suggest a default value for the widget, or record the selected 
     value. 
-    If there is no value in values.choices, the method will set its value
-    to be a previously selected value. 
-    Otherwise, the current value is recorded. 
-    The key by which the value is recorded is a combination of 
-    (text, options, guess_hint). 
+    If there is no value in values.choices:
+      The method will look for a value under 'key', and set values.choices
+      to that value. If there is no value, values.choices is set to default_value.
+    If there is a value in values.choices:
+      The value is saved under 'key'.
     """
     select_dict = CACHE.get('select_dict', none_if_not_found=True)
-    key = make_unique_str((text, options, guess_hint))
+    key = make_unique_str(key)
     if not select_dict:
       select_dict = {}
     if self.values.choices == None:
-      self.values.choices = select_dict.get(key, None)
+      self.values.choices = select_dict.get(key, default_value)
     else:
       select_dict[key] = self.values.choices
       CACHE.put('select_dict', select_dict, 'select')   
