@@ -1,5 +1,5 @@
 ﻿<b>{{ text }}</b><br />
-<input type="text" name="{{ id }}" id="{{ id }}" value="{{ value }}" />
+<input type="text" name="{{ id }}" id="{{ id }}" value="{{ value }}" size="{{ size }}"/>
 {{ comment }}
 {% for group in predefined_values %}
 <button id="{{ id }}_group_{{ forloop.counter }}">{{ group.0 }}</button>

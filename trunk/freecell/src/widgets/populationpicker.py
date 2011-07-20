@@ -113,7 +113,7 @@ class PopulationPicker(Widget):
       self.experiment_to_widgets[self.experiment] = widgets
     
     for w in self.experiment_to_widgets[self.experiment]:
-      w.guess_or_remember_choices(w.tag, w.vals, self.__class__.__name__)
+      w.guess_or_remember((w.tag, w.vals, self.__class__.__name__))
     #if not self.widgets.arcsin_factor.values.value:
     #  self.widgets.arcsin_factor.values.value = '1'
 
