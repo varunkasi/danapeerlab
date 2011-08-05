@@ -108,7 +108,7 @@ class AbstractPlot(Widget):
     if not self.enable_gating:
       return []
     else:
-      return ['table']
+      return ['table', 'out']
 
   
   def run(self, **tables):
@@ -129,6 +129,8 @@ class AbstractPlot(Widget):
       range_y = DimRange(dim_y, gate_min_y, gate_max_y)
       data['table'] = table.gate(range_x, range_y)
       data['table'].name = '%s | %s, %s' % (table.name, dim_range_to_str(range_x), dim_range_to_str(range_y))
+      data['out'] = table.gate_out(range_x, range_y)
+      data['out'].name = '%s |NOT: %s, %s' % (table.name, dim_range_to_str(range_x), dim_range_to_str(range_y))
       data['view'] = View(self, 'Table gated, %d cells left' % data['table'].num_cells)
       return data
     

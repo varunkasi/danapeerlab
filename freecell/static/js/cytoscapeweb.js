@@ -32,18 +32,24 @@
 
 // Create namespaces if not already defined:
 (function () {
-    "use strict";
-
-    if (!this.org) {
-        this.org = {};
+	
+    if (typeof(window['org']) === 'undefined') {
+    	/**
+    	 * @namespace
+    	 * @name org
+    	 */
+    	window['org'] = {};
     }
-    if (!this.org.cytoscapeweb) {
-        /** @namespace */
-        this.org.cytoscapeweb = {};
+    if (typeof(window.org['cytoscapeweb']) === 'undefined') {
+    	/**
+    	 * @namespace
+    	 * @name org.cytoscapeweb
+    	 */
+    	org['cytoscapeweb'] = {};
     }
-
+    
     // Create a global map to store all instances of Cytoscape Web:
-    this._cytoscapeWebInstances = { index: 0 };
+    window._cytoscapeWebInstances = { index: 0 };
 
     // ===[ Visualization ]=========================================================================
     
@@ -126,7 +132,7 @@
      * @see org.cytoscapeweb.Visualization#draw
      * @see org.cytoscapeweb.Visualization#ready
      */
-    this.org.cytoscapeweb.Visualization = function (containerId, options) {
+    org.cytoscapeweb.Visualization = function (containerId, options) {
         this.containerId = containerId;
 
         if (!options) { options = {}; }
@@ -160,6 +166,7 @@
          * vis.draw({ network: '&lt;graphml&gt;...&lt;/graphml&gt;',
          *            edgeLabelsVisible: false,
          *            layout: 'Circle',
+         *            panZoomControlPosition: 'bottomLeft',
          *            visualStyle: {
          *                global: {
          *                    backgroundColor: "#000033",
@@ -224,6 +231,18 @@
          *                                                            will be visible. The default value is <code>true</code>.
          *                                                            The visibility of the control can be changed later with
          *                                                            {@link org.cytoscapeweb.Visualization#panZoomControlVisible}.</li>
+         *                    <li><code>panZoomControlPosition</code>: String value that sets the initial position of the built-in control.
+         *                                                             The allowed values are:
+         *                                                             <ul><li><code>topLeft</code></li>
+         *                                                                 <li><code>topCenter</code></li>
+         *                                                                 <li><code>topRight</code></li>
+         *                                                                 <li><code>middleLeft</code></li>
+         *                                                                 <li><code>middleCenter</code></li>
+         *                                                                 <li><code>middleRight</code></li>
+         *                                                                 <li><code>bottomLeft</code></li>
+         *                                                                 <li><code>bottomCenter</code></li>
+         *                                                                 <li><code>bottomRight</code></li></ul>
+         *                                                             The default value is <code>"bottomRight"</code>.</li>
          *                    <li><code>preloadImages</code>: Boolean that defines whether or not to load all images before rendering the network.
          *                                                    If <code>true</code>, all images from a 
          *                                                    {@link org.cytoscapeweb.VisualStyle} or {@link org.cytoscapeweb.VisualStyleBypass}
@@ -395,7 +414,7 @@
             	return this;
             } else {
             	json = swf.getVisualStyleBypass();
-            	return JSON.parse(json);
+            	return this._parseJSON(json);
             }
         },
 
@@ -578,7 +597,7 @@
          */
         node: function (id) {
             var str = this.swf().getNodeById(id);
-            return JSON.parse(str);
+            return this._parseJSON(str);
         },
         
         /**
@@ -589,7 +608,7 @@
          */
         nodes: function () {
             var str = this.swf().getNodes();
-            return JSON.parse(str);
+            return this._parseJSON(str);
         },
 
         /**
@@ -604,7 +623,7 @@
          */
         edge: function (id) {
             var str = this.swf().getEdgeById(id);
-            return JSON.parse(str);
+            return this._parseJSON(str);
         },
         
         /**
@@ -617,7 +636,7 @@
          */
         edges: function () {
             var str = this.swf().getEdges();
-            return JSON.parse(str);
+            return this._parseJSON(str);
         },
         
         /**
@@ -628,7 +647,7 @@
          */
         mergedEdges: function () {
             var str = this.swf().getMergedEdges();
-            return JSON.parse(str);
+            return this._parseJSON(str);
         },
         
         /**
@@ -890,7 +909,7 @@
          * use {@link org.cytoscapeweb.Visualization#visualStyle} or {@link org.cytoscapeweb.Visualization#visualStyleBypass}.</p>
          * <p>If you try to change an attribute that has not been previously defined, Cytoscape Web will throw an {@link org.cytoscapeweb.Error}.
          * In this case, you have to add the attribute definition first, by calling {@link org.cytoscapeweb.Visualization#addDataField}.</p>
-         * <p>Another important thing to remember is that you cannot directly change merged edges attributes.</p>
+         * <p>Another important thing to remember is that you cannot update merged edges data, since they are derived attributes.</p>
          * <p>Finally, all the continuous and custom mappers - defined by the current visual style - will be automatically recomputed after
          * updating the data.</p>
          * 
@@ -1171,7 +1190,7 @@
          */
         firstNeighbors: function (nodes, ignoreFilteredOut) {
             var str = this.swf().firstNeighbors(nodes, ignoreFilteredOut);
-            return JSON.parse(str);
+            return this._parseJSON(str);
         },
 
         /**
@@ -1628,11 +1647,11 @@
          */
         embedSWF: function () {
             //Major version of Flash required
-            var requiredMajorVersion = 9;
+            var requiredMajorVersion = 10;
             //Minor version of Flash required
             var requiredMinorVersion = 0;
             //Minor version of Flash required
-            var requiredRevision = 24;
+            var requiredRevision = 0;
 
             var containerId = this.containerId;
 
@@ -1774,7 +1793,9 @@
          */
         _dispatch: function (functionName, jsonArg) {
             var arg = null;
-            if (jsonArg != null) { arg = JSON.parse(jsonArg); }
+            if (jsonArg != null) {
+            	arg = this._parseJSON(jsonArg);
+            }
             var ret = this[functionName](arg);
             return ret;
         },
@@ -1840,11 +1861,11 @@
             var list = [];
             gr = this._normalizeGroup(gr);
             if (gr === "nodes" || gr === "none") {
-                var nodes = JSON.parse(this.swf()[fnNodes]());
+                var nodes = this._parseJSON(this.swf()[fnNodes]());
                 list = list.concat(nodes);
             }
             if (gr === "edges" || gr === "none") {
-                var edges = JSON.parse(this.swf()[fnEdges]());
+                var edges = this._parseJSON(this.swf()[fnEdges]());
                 list = list.concat(edges);
             }
             return list;
@@ -1859,6 +1880,11 @@
                 return "object";
             }
             return typeof(v);
+        },
+        
+        _parseJSON: function(s) {
+        	if (s != null) { s = s.replace(/\n/g, '\\n').replace(/\t/g, '\\t'); }
+        	return JSON.parse(s);
         }
     };
 
@@ -1970,7 +1996,7 @@
      * @see org.cytoscapeweb.Visualization#hasListener
      * @see org.cytoscapeweb.Visualization#removeListener
      */
-    this.org.cytoscapeweb.Event = function (options) {
+    org.cytoscapeweb.Event = function (options) {
         /**
          * The event type name.
          * @type org.cytoscapeweb.EventType
@@ -2135,12 +2161,29 @@
      * @memberOf org.cytoscapeweb.Node#
      */ 
     /**
-     * The absolute node height and width (in pixels), when the zoom level is 100%.
-     * In Cytoscape Web, a node has the same value for both width and height.
-     * Notice that this value is not scaled, so if you want its real visualized size, you need to multiply
+     * The absolute node size (in pixels), when the zoom level is 100%. It is the highest value of height and width.
+     * Notice that this value is not scaled, so if you want the real visualized size, you need to multiply
      * this value by the current network scale, which is provided by {@link org.cytoscapeweb.Visualization#zoom}.
      * @property
      * @name size
+     * @type Number
+     * @memberOf org.cytoscapeweb.Node#
+     */
+    /**
+     * The absolute node width (in pixels), when the zoom level is 100%.
+     * This value is not scaled, so if you want the real rendered width, you need to multiply
+     * this value by the current network scale, which is provided by {@link org.cytoscapeweb.Visualization#zoom}.
+     * @property
+     * @name width
+     * @type Number
+     * @memberOf org.cytoscapeweb.Node#
+     */
+    /**
+     * The absolute node height (in pixels), when the zoom level is 100%.
+     * This value is not scaled, so if you want the real rendered height, you need to multiply
+     * this value by the current network scale, which is provided by {@link org.cytoscapeweb.Visualization#zoom}.
+     * @property
+     * @name height
      * @type Number
      * @memberOf org.cytoscapeweb.Node#
      */
@@ -2496,7 +2539,13 @@
      * <p>An object that defines visual styles for nodes.</p>
      * <p>The possible node properties are:</p>
      * <ul class="options"><li><code>shape</code> {{@link org.cytoscapeweb.NodeShape}}: Node shape name. The default value is "ELLIPSE".</li>
-     *     <li><code>size</code> {Number}: Node size, in pixels. The default value is 24.</li>
+     *     <li><code>size</code> {Number}: Node size, in pixels.
+     *                                     It has the same effect of setting the same value (or mapper) to both <code>width</code> and <code>height</code>.
+     *                                     The default value is 24.</li>
+     *     <li><code>width</code> {Number}: Node width, in pixels. It is not set by default.
+     *                                      If set, it overrides the value returned by <code>size</code>.</li>
+     *     <li><code>height</code> {Number}: Node height, in pixels. It is not set by default.
+     *                                       If set, it overrides the value returned by <code>size</code>.</li>
      *     <li><code>color</code> {String}: Fill color code of nodes. The default value is "#f5f5f5".</li>
      *     <li><code>image</code> {String}: The URL of the image to be used as the node background. No image is used by default.
      *                                      If you specify a cross-domain address, then the image might not be loaded by Flash, unless
