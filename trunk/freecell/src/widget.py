@@ -69,6 +69,13 @@ class Widget(object):
     as file name, as part of css. """
     return id.replace(' ', '').replace('-','').replace('/','_').replace('\\', '_')
 
+  def _get_widget(self, name):
+    """ Gets a widget with the specified name. """
+    name = self._normalize_id(name)
+    if not name in self.widgets:
+      raise Exception('name %s not found.' % name)
+    return self.widgets[name]
+      
   def _add_widget(self, name, new_widget_type, *args, **kargs):
     """ Adds a sub widget. """
     name = self._normalize_id(name)

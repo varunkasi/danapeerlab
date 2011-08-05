@@ -20,6 +20,7 @@ from freecellmenu import FreecellMenu
 from histogram import HistogramPlot
 from loadfcs import LoadFcs
 import plots
+from network import Network
 from populationpicker import PopulationPicker
 
 """ A chain is a special widget that allows users to create interactive chains
@@ -99,7 +100,8 @@ CHAINABLE_WIDGETS = [
     ('Function Plot', plots.FunctionPlot),
     ('Scatter Gater', plots.ScatterGater),
     ('Density Gater', plots.DensityGater),
-    ('Function Gater', plots.FunctionGater)]
+    ('Function Gater', plots.FunctionGater),
+    ('Network', Network)]
 
 def widget_type_to_name(widget_type):
   global CHAINABLE_WIDGETS 
@@ -145,18 +147,23 @@ class WidgetInChain(Widget):
       w.values.choices = [self.get_default_input(input, previous_widgets)]
   
   def on_load(self):
+    self.outputs_from_run = None
     if not 'new_widget_select' in self.widgets:
       self._add_widget('new_widget_select', Select)
     if not 'apply_new_widget' in self.widgets:
       self._add_widget('apply_new_widget', ApplyButton)
 
-  def get_default_input(self, input, previous_widgets):   
+  def get_default_input(self, input, previous_widgets):
     for i in xrange(len(previous_widgets)-1, -1, -1):
       if input in previous_widgets[i].get_outputs():
         return '%d,%s' % (i, input)
     return 'None'
   
-  def get_outputs(self):  
+  def get_outputs(self):
+    #if self.outputs_from_run == None:
+    #  raise Exception('Outputs can be queried only after run was called')
+    
+    #return self.outputs_from_run    
     if self.widgets.sub_widget.has_method('get_outputs'):
       outputs = self.widgets.sub_widget.get_outputs()
     else:
@@ -180,13 +187,14 @@ class WidgetInChain(Widget):
         input_map[input] = None
       else:
         input_map[input] = data[idx][out]   
-    return input_map
-
-      
+    return input_map     
       
   def run(self, data):
+    self.outputs_from_run = []
     if self.widgets.sub_widget.has_method('run'):
-        return self.widgets.sub_widget.run(**self.create_input_map(data))
+        ret =  self.widgets.sub_widget.run(**self.create_input_map(data))
+        #self.outputs_from_run = ret.keys()
+        return ret
     
   def title(self, place_in_chain, short=False):
     if self.widgets.sub_widget.has_method('title'):
@@ -339,6 +347,7 @@ class Chain(Widget):
         views.append('Exception when running %s: %s' % (widget.title(i), str(e)))
         break
     del data
+    
     widgets_view = stack_lines(*views)
     add_view = stack(
         self.widgets.new_widget_select.view(

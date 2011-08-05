@@ -252,7 +252,7 @@ if __name__ == '__main__':
   
   class TestMatlabPipe(unittest.TestCase):
     def setUp(self):
-      matlab_path = '/Applications/MATLAB_R2010b.app/bin/matlab'
+      matlab_path = '/Applications/MATLAB_R2011a.app/bin/matlab'
       self.matlab = MatlabPipe(matlab_path)
       self.matlab.open()
 

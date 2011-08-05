@@ -24,6 +24,28 @@ def dim_range_to_str(dim_range):
   return '[%.3f < %s < %.3f]' % (dim_range.min, dim_range.dim, dim_range.max)
 
 
+#class Stat(Object):
+#  def __init__(self, stat_name, dims, params=[], vals=[]):
+#    self.stat_name = stat_name
+#    self.dims = dims
+#    self.params = params
+#    self.vals = vals
+  
+#def compare_tables(foreground_tables, background, dims, stats, number_of_samples=100, num_cells_per_sample=500):
+#  if num_cells_per_sample > background.num_cells:
+#    raise Exception('Sample is too big')
+  
+  # Create all stats requests:
+  
+  
+  # Create null distributions:
+#  null_stats = []
+#  for i in xrange(number_of_samples):
+#    sample = background.random_sample(num_cells_per_sample)
+#    null_stats.append(sample.stats(stats, dims))
+
+
+  
 def fake_table(*args, **kargs):
   from numpy.random import normal
   num_cells = kargs.get('num_cells', 10000)
@@ -209,6 +231,14 @@ class DataTable(AutoReloader):
 
     return np.corrcoef(self.get_cols(dim1), self.get_cols(dim2))[0,1]
 
+  def get_average(self, dim):
+    p = self.get_points(dim)
+    return np.average(p)
+
+  def get_std(self, dim):
+    p = self.get_points(dim)
+    return np.std(p)
+    
   def get_stats(self, dim, prefix=''):
     """Get various 1d statistics for the datatable.
     """
@@ -286,6 +316,18 @@ class DataTable(AutoReloader):
     test1 = np.alltrue(relevant_data >= mins, axis=1)
     test2 = np.alltrue(relevant_data <= maxes, axis=1)
     final = np.logical_and(test1, test2)   
+    return DataTable(self.data[final], self.dims)
+
+  def gate_out(self, *dim_ranges):
+    """ Returns all the cells outside the given gate. 
+    Accepts DimRanges which are named tuples of (dim, min, max).
+    """
+    relevant_data = self.get_points(*[r.dim for r in dim_ranges])
+    mins = np.array([r.min for r in dim_ranges])
+    maxes = np.array([r.max for r in dim_ranges])
+    test1 = np.any(relevant_data < mins, axis=1)
+    test2 = np.any(relevant_data > maxes, axis=1)
+    final = np.logical_or(test1, test2)   
     return DataTable(self.data[final], self.dims)
 
     

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import axes
 import view
+from operator import itemgetter
 from widget import Widget
 from view import View
 from view import render
@@ -91,8 +92,22 @@ class HistogramPlot(Widget):
         if not widget_key in self.widgets:
           self._add_widget(widget_key, Figure)
         figure_widget = self.widgets[widget_key]
+        
+        if len(inputs) > 1:
+          from scipy.stats import ks_2samp
+          ks, p_ks = ks_2samp(tables[inputs[0]].get_cols(dim)[0], tables[inputs[1]].get_cols(dim)[0])
+          ks_view = View(self, 'ks: %.3f, p_ks: %.10f' % (ks, p_ks))
+          final_view = stack_lines(ks_view, figure_widget.view(fig))
+        else:
+          ks, p_ks = 0, 0
+          final_view = figure_widget.view(fig)
+        
         # Add the new widget's view
-        main_views.append(figure_widget.view(fig))
+        main_views.append((ks, p_ks, final_view))
+      
+      # sort by the ks test:
+      main_views = sorted(main_views, key=itemgetter(0), reverse=True)
+      main_views = [v[2] for v in main_views]
       main_view = view.stack_left(*main_views)
     else:
       main_view = View(None, 'Please select dimensions')    

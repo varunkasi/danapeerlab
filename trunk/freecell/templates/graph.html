@@ -1,4 +1,4 @@
-﻿<div id="{{ id }}" class="graph">
+﻿<div id="{{ id }}" class="graph" style="width:600px; height:500px;">
 </div>
 
 <script type="text/javascript">
@@ -7,13 +7,38 @@ $(document).ready(function()
     // id of Cytoscape Web container div
     var div_id = "{{ id }}";
     
+    var network_json2 = {
+      dataSchema: {
+        nodes: [ { name: "label", type: "string" },
+                 { name: "score", type: "number" } ],
+                 
+        edges: [ { name: "label", type: "string" },
+                 { name: "score", type: "number" },
+                 { name: "directed", type: "boolean", defValue: true} ]
+      },    
+    
+      data: {
+        nodes: [
+{% for node in nodes %}
+                 { id: "{{ node.id }}", label: "{{ node.label|safe }}", score: {{ node.score }} }{% if not forloop.last %},{% endif %}
+{% endfor %}
+               ],
+        edges: [
+{% for edge in edges %}
+                 { directed: {{ edge.is_directed|lower }}, id: "e{{ forloop.counter }}", label: "{{ edge.label|safe }}", score: {{ edge.score }}, source: "{{ edge.source }}", target: "{{ edge.target }}" }{% if not forloop.last %},{% endif %}
+{% endfor %}
+               ]
+      }
+    };
+
     // you could also use other formats (e.g. GraphML) or grab the network data via AJAX
+    /*
     var network_json = {
         data: {
             nodes: {{ nodes_json }},
             edges: {{ edges_json }}
         }
-    };
+    };*/
     
     // initialization options
     var options = {
@@ -22,10 +47,47 @@ $(document).ready(function()
         // where you have the Flash installer SWF
         flashInstallerPath: "/static/swf/playerProductInstall"
     };
-    
+
+    var style = {
+        global: {
+            backgroundColor: "#ffffff",
+            tooltipDelay: 1000
+        },
+        nodes: {
+            shape: "ELLIPSE",
+            color: "#f5f5f5",
+            opacity: 1,
+            size: { defaultValue: 65, 
+                    continuousMapper: { attrName: "weight", 
+                                        minValue: 12, 
+                                        maxValue: 36 } },
+            borderColor: "#666666",
+            tooltipText: "<b>${label}</b>: ${weight}",
+            labelFontWeight: "bold",
+            labelFontSize: 10,
+            labelHorizontalAnchor: "center",
+            labelVerticalAnchor: "center"
+        },
+        edges: {
+            color: "#999999",
+            width: 2,
+            mergeWidth: 2,
+            opacity: 1,
+            label: { passthroughMapper: { attrName: "label" } },
+            labelFontSize: 10,
+            labelFontWeight: "bold"
+         }
+};
     // init and draw
     var vis = new org.cytoscapeweb.Visualization(div_id, options);
-    vis.draw({ network: network_json });
+    var draw_options = {
+                    network: network_json2,
+                    edgeLabelsVisible: true,
+                    layout: "Tree",
+                    visualStyle: style,
+                    panZoomControlVisible: true 
+                };
+    vis.draw(draw_options);
   }
 );
 </script>
