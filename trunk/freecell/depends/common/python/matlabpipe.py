@@ -4,14 +4,15 @@
 unix.
 
 This module exposes the same interface as mlabraw.cpp, so it can be used along
-with mlabwrap.py. 
+with mlabwrap.py.
 The module sends commands to the matlab process using the standard input pipe.
-It loads data from/to the matlab process using the undocumented save/load stdio 
+It loads data from/to the matlab process using the undocumented save/load stdio
 commands. Only unix (or mac osx) versions of Matlab support pipe communication,
 so this module will only work under unix (or mac osx). 
 
 Author: Dani Valevski <daniva@gmail.com>
-Dependencies: scipy 
+Dependencies: scipy
+Tested Matlab Versions: 2010b, 2011a 
 License: MIT
 """
 
@@ -20,31 +21,78 @@ import fcntl
 import numpy as np
 import os
 import scipy.io as mlabio
+import select
 import subprocess
 import sys
-import select
+
+def find_matlab_process():
+  """" Tries to guess matlab process path on osx machines.
+  
+  The paths we will search are in the format:
+  /Applications/MATLAB_R[YEAR][VERSION].app/bin/matlab
+  We will try the latest version first. If no path is found, None is reutrned.
+  """
+  base_path = '/Applications/MATLAB_R%d%s.app/bin/matlab'
+  years = range(2050,1990,-1)
+  versions = ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
+  for year in years:
+    for version in versions:
+      matlab_path = base_path % (year, version)
+      if os.path.exists(matlab_path):
+        return matlab_path
+  return None
+
+def find_matlab_version(process_path):
+  """ Tries to guess matlab's version according to its process path.
+  
+  If we couldn't gues the version, None is returned.
+  """
+  bin_path = os.path.dirname(process_path)
+  matlab_path = os.path.dirname(bin_path)
+  matlab_dir_name = os.path.basename(matlab_path)
+  version = matlab_dir_name.replace('MATLAB_R', '').replace('.app', '')
+  if not is_valid_version_code(version):
+    return None
+  return version
+
+def is_valid_version_code(version):
+  """ Checks that the given version code is valid.
+  """
+  return version != None and len(version) == 5 and \
+      int(version[:4]) in range(1990, 2050) and \
+      version[4] in ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
 
 class MatlabPipe(object):
   """ Manages a connection to a matlab process.
   
+  Matlab version is in the format [YEAR][VERSION] for example: 2011a.
   The process can be opened and close with the open/close methods.
-  To send a command to the matlab shell use 'eval'. 
-  To load numpy data to the matlab shell use 'put'. 
-  To retrieve numpy data from the matlab shell use 'get'. 
+  To send a command to the matlab shell use 'eval'.
+  To load numpy data to the matlab shell use 'put'.
+  To retrieve numpy data from the matlab shell use 'get'.
   """
   
-  def __init__(self, matlab_process_path):
+  def __init__(self, matlab_process_path='guess', matlab_version='guess'):
     """ Inits the class.
-
+    
     matlab path should be a path to the matlab executeable. For example:
     /Applications/MATLAB_R2010b.app/bin/matlab
     """
+    if matlab_process_path == 'guess':
+      matlab_process_path = find_matlab_process()
+    if matlab_version == 'guess':
+      matlab_version = find_matlab_version(matlab_process_path)
+    if not is_valid_version_code(matlab_version):
+      raise Exception('Invalid version code %s' % matlab_version)
+    if not os.path.exists(matlab_process_path):
+      raise Exception('Matlab process path %s does not exist' % matlab_process_path)
+    self.matlab_version = (int(matlab_version[:4]), matlab_version[4])
     self.matlab_process_path = matlab_process_path
     self.process = None
     self.command_end_string='___MATLAB_PIPE_COMMAND_ENDED___'
     self.expected_output_end = '%s\n>> ' % self.command_end_string
     self.stdout_to_read = ''
-
+  
   def open(self, print_matlab_welcome=True):
     """ Opens the matlab process.
     """
@@ -56,28 +104,28 @@ class MatlabPipe(object):
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     flags = fcntl.fcntl(self.process.stdout, fcntl.F_GETFL)
     fcntl.fcntl(self.process.stdout, fcntl.F_SETFL, flags| os.O_NONBLOCK)
-
+    
     if print_matlab_welcome:
       self._sync_output()
     else:
       self._sync_output(None)
-
+  
   def close(self):
     """ Closes the matlab process.
     """
     self._check_open()
     self.process.stdin.close()
-
+  
   def eval(self,
            expression,
            identify_errors=True,
            print_expression=True,
            on_new_output=sys.stdout.write):
     """ Evaluates a matlab expression synchronously.
-
+    
     If identify_erros is true, and the last output line after evaluating the
     expressions begins with '???' and excpetion is thrown with the matlab error
-    following the '???'. 
+    following the '???'.
     If on_new_output is not None, it will be called whenever a new output is
     encountered. The default value prints the new output to the screen.
     The return value of the function is the matlab output following the call.
@@ -94,8 +142,8 @@ class MatlabPipe(object):
       end = ret.find('\n', begin)
       raise Exception(ret[begin:end])
     return ret
-  
 
+  
   def put(self, name_to_val, oned_as='row', on_new_output=None):
     """ Loads a dictionary of variable names into the matlab shell.
     
@@ -124,18 +172,18 @@ class MatlabPipe(object):
           on_new_output=None):
     """ Loads the requested variables from the matlab shell.
     
-    names_to_get can be either a variable name, a list of variable names, or 
+    names_to_get can be either a variable name, a list of variable names, or
     None.
     If it is a variable name, the values is returned.
     If it is a list, a dictionary of variable_name -> value is returned.
     If it is None, adictionary with all variables is returned.
     
-    If extract_numpy_scalars is true, the method will convert numpy scalars 
+    If extract_numpy_scalars is true, the method will convert numpy scalars
     (0-dimension arrays) to a regular python variable.
     """
     self._check_open()
     single_itme = isinstance(names_to_get, (unicode, str))
-    if single_itme:    
+    if single_itme:
       names_to_get = [names_to_get]
     if names_to_get == None:
       self.process.stdin.write('save stdio;\n')
@@ -146,7 +194,7 @@ class MatlabPipe(object):
       #print 'save(\'stdio\', \'%s\');\n' % '\', \''.join(names_to_get)
       self.process.stdin.write(
                                "save('stdio', '%s', '-v6');\n" % '\', \''.join(names_to_get))
-    # We have to read to a temp buffer because mlabio.loadmat needs 
+    # We have to read to a temp buffer because mlabio.loadmat needs
     # random access :(
     self._read_until('start_binary\n', on_new_output=on_new_output)
     #print 'got start_binary'
@@ -154,7 +202,13 @@ class MatlabPipe(object):
     #print 'got all outout'
     # Remove expected output and "\n>>"
     # TODO(dani): Get rid of the unecessary copy.
-    temp_str = temp_str[:-len(self.expected_output_end)-3]
+    # MATLAB 2010a adds an extra >> so we need to remove more spaces.
+    # We assume this is the same for previous versions although it was
+    # only tested on 2011b, 2010a.
+    if self.matlab_version <= (2010,'c'):
+      temp_str = temp_str[:-len(self.expected_output_end)-6]
+    else:
+      temp_str = temp_str[:-len(self.expected_output_end)-3]
     temp = StringIO(temp_str)
     #print ('____')
     #print len(temp_str)
@@ -174,11 +228,11 @@ class MatlabPipe(object):
     if single_itme:
       return ret.values()[0]
     return ret
-
+  
   def _check_open(self):
     if not self.process or self.process.returncode:
       raise Exception('Matlab(TM) process is not active.')
-      
+  
   def _read_until(self, wait_for_str, on_new_output=sys.stdout.write):
     all_output = StringIO()
     output_tail = self.stdout_to_read
@@ -198,8 +252,8 @@ class MatlabPipe(object):
     all_output.write(chunk_to_take)
     all_output.seek(0)
     return all_output.read()
-    
       
+  
   """
   def _wait_for(self, wait_for_str, on_new_output=sys.stdout.write):
     all_output = StringIO()
@@ -227,7 +281,7 @@ class MatlabPipe(object):
       finally:
         if not conn.closed:
           fcntl.fcntl(conn, fcntl.F_SETFL, flags)
-
+      
       #print 'after read'
       if on_new_output:
         on_new_output(new_output)
@@ -252,13 +306,12 @@ if __name__ == '__main__':
   
   class TestMatlabPipe(unittest.TestCase):
     def setUp(self):
-      matlab_path = '/Applications/MATLAB_R2011a.app/bin/matlab'
-      self.matlab = MatlabPipe(matlab_path)
+      self.matlab = MatlabPipe()
       self.matlab.open()
-
+    
     def tearDown(self):
       self.matlab.close()
-
+    
     def test_eval(self):
       for i in xrange(100):
         ret = self.matlab.eval('disp \'hiush world%s\';' % ('b'*i))
@@ -273,17 +326,17 @@ if __name__ == '__main__':
       self.matlab.put({'X': 'string'})
       ret = self.matlab.get('X')
       self.assertEquals(ret, 'string')
-          
+    
     def test_get(self):
       self.matlab.eval('A = [1 2 3];')
       ret = self.matlab.get('A')
       self.assertEquals(ret[0], 1)
       self.assertEquals(ret[1], 2)
       self.assertEquals(ret[2], 3)
-  
+    
     def test_error(self):
       self.assertRaises(Exception,
                         self.matlab.eval,
                         'no_such_function')
-
+  
   unittest.main()
