@@ -25,6 +25,14 @@ import select
 import subprocess
 import sys
 
+class MatlabError(Exception):
+  """Raised when a Matlab evaluation results in an error inside Matlab."""
+  pass
+
+class MatlabConnectionError(Exception):
+  """Raised for errors related to the Matlab connection."""
+  pass
+
 def find_matlab_process():
   """" Tries to guess matlab process path on osx machines.
   
@@ -83,9 +91,9 @@ class MatlabPipe(object):
     if matlab_version == 'guess':
       matlab_version = find_matlab_version(matlab_process_path)
     if not is_valid_version_code(matlab_version):
-      raise Exception('Invalid version code %s' % matlab_version)
+      raise ValueError('Invalid version code %s' % matlab_version)
     if not os.path.exists(matlab_process_path):
-      raise Exception('Matlab process path %s does not exist' % matlab_process_path)
+      raise ValueError('Matlab process path %s does not exist' % matlab_process_path)
     self.matlab_version = (int(matlab_version[:4]), matlab_version[4])
     self.matlab_process_path = matlab_process_path
     self.process = None
@@ -97,7 +105,7 @@ class MatlabPipe(object):
     """ Opens the matlab process.
     """
     if self.process and not self.process.returncode:
-      raise Exception('Matlab(TM) process is still active. Use close to '
+      raise MatlabConnectionError('Matlab(TM) process is still active. Use close to '
                       'close it')
     self.process = subprocess.Popen(
         [self.matlab_process_path, '-nojvm', '-nodesktop'],
@@ -140,7 +148,7 @@ class MatlabPipe(object):
     if identify_errors and ret.rfind('???') != -1:
       begin = ret.rfind('???') + 4
       end = ret.find('\n', begin)
-      raise Exception(ret[begin:end])
+      raise MatlabError(ret[begin:end])
     return ret
 
   
@@ -231,7 +239,7 @@ class MatlabPipe(object):
   
   def _check_open(self):
     if not self.process or self.process.returncode:
-      raise Exception('Matlab(TM) process is not active.')
+      raise MatlabConnectionError('Matlab(TM) process is not active.')
   
   def _read_until(self, wait_for_str, on_new_output=sys.stdout.write):
     all_output = StringIO()
@@ -242,7 +250,7 @@ class MatlabPipe(object):
       if on_new_output: on_new_output(tail_to_remove)
       all_output.write(tail_to_remove)
       if not select.select([self.process.stdout], [], [], 10)[0]:
-        raise Exception('timeout')
+        raise MatlabConnectionError('timeout')
       new_output = self.process.stdout.read(65536)
       output_tail += new_output
     chunk_to_take, chunk_to_keep = output_tail.split(wait_for_str, 1)
@@ -335,7 +343,7 @@ if __name__ == '__main__':
       self.assertEquals(ret[2], 3)
     
     def test_error(self):
-      self.assertRaises(Exception,
+      self.assertRaises(MatlabError,
                         self.matlab.eval,
                         'no_such_function')
   
