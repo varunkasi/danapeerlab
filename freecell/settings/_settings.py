@@ -1,5 +1,5 @@
 ﻿FREECELL_DIR = r'/Users/dv2250/svn/danapeerlab/scf'
-MATLAB_PATH = r'/Applications/MATLAB_R2010a.app/' #Needed only in mac
+MATLAB_PATH = r'guess' #Needed only in mac, 'guess' will try to auto-detect.
 EXPERIMENTS = {
     'AML with T-Sne data' : (
         r'Z:\dani\aml_tsne\aml.index',

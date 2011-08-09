@@ -201,7 +201,10 @@ class mlabraw:
       ret.open()
     else:
       import settings
-      matlab_path = settings.MATLAB_PATH + '/bin/matlab'
+      if settings.MATLAB_PATH != 'guess':
+        matlab_path = settings.MATLAB_PATH + '/bin/matlab'
+      else:
+        matlab_path = 'guess'
       try:
         ret = MatlabConnection(matlab_path)
         ret.open()
