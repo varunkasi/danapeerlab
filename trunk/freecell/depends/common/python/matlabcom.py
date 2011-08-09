@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" A python module for raw communication with Matlab(TM) using CON client
+""" A python module for raw communication with Matlab(TM) using COM client
  under windows.
 
 The module sends commands to the matlab process as a COM client. This is only
