@@ -19,6 +19,13 @@ except:
   print 'win32com in missing, please install it'
   raise
 
+class MatlabError(Exception):
+  """Raised when a Matlab evaluation results in an error inside Matlab."""
+  pass
+
+class MatlabConnectionError(Exception):
+  """Raised for errors related to the Matlab connection."""
+  pass
 
 class MatlabCom(object):
   """ Manages a matlab COM client.
@@ -37,7 +44,7 @@ class MatlabCom(object):
     Note: If this method fails, try running matlab with the -regserver flag.
     """
     if self.client:
-      raise Exception('Matlab(TM) COM client is still active. Use close to '
+      raise MatlabConnectionError('Matlab(TM) COM client is still active. Use close to '
                       'close it')
     self.client = win32com.client.Dispatch('matlab.application')
     self.client.visible = visible
@@ -67,7 +74,7 @@ class MatlabCom(object):
     if identify_erros and ret.rfind('???') != -1:
       begin = ret.rfind('???') + 4
       end = ret.find('\n', begin)
-      raise Exception(ret[begin:end])    
+      raise MatlabError(ret[begin:end])    
     return ret
     
   def get(self, names_to_get, convert_to_numpy=True):
@@ -110,7 +117,7 @@ class MatlabCom(object):
     
   def _check_open(self):
     if not self.client:
-      raise Exception('Matlab(TM) process is not active.')
+      raise MatlabConnectionError('Matlab(TM) process is not active.')
 
 if __name__ == '__main__':
   import unittest
@@ -147,7 +154,7 @@ if __name__ == '__main__':
       self.assertEquals(ret[2], 3)
   
     def test_error(self):
-      self.assertRaises(Exception,
+      self.assertRaises(MatlabError,
                         self.matlab.eval,
                         'no_such_function')
 

@@ -185,54 +185,8 @@ except ImportError:
 
 
 from tempfile import gettempdir
+import mlabraw
 
-is_win = sys.platform == 'win32'
-
-if is_win:
-  from matlabcom import MatlabCom as MatlabConnection
-else:
-  from matlabpipe import MatlabPipe as MatlabConnection
-
-class mlabraw:
-  @staticmethod
-  def open(arg):
-    if is_win:
-      ret = MatlabConnection()
-      ret.open()
-    else:
-      import settings
-      if settings.MATLAB_PATH != 'guess':
-        matlab_path = settings.MATLAB_PATH + '/bin/matlab'
-      else:
-        matlab_path = 'guess'
-      try:
-        ret = MatlabConnection(matlab_path)
-        ret.open()
-      except:
-        print 'Could not open matlab, is it in %s?' % matlab_path
-    return ret
-  
-  @staticmethod
-  def close(matlab):
-    matlab.close()
-
-  @staticmethod
-  def eval(matlab, exp, log=False):
-    if log or is_win:
-      matlab.eval(exp)
-    else:
-      matlab.eval(exp, print_expression=False, on_new_output=None)
-    return ''
-
-  @staticmethod
-  def get(matlab, var_name):
-    return matlab.get(var_name)
-
-  @staticmethod
-  def put(matlab, var_name, val):
-    matlab.put({var_name : val})
-
-  error = Exception
 from awmstools import update, gensym, slurp, spitOut, isString, escape, strToTempfile, __saveVarsHelper
 
 #XXX: nested access
@@ -480,9 +434,6 @@ class MlabWrap(object):
                      "TMP_CLS__ = class(%(x)s); if issparse(%(x)s),"
                      "TMP_CLS__ = [TMP_CLS__,'-sparse']; end;" % dict(x=varname))
         res_type = mlabraw.get(self._session, "TMP_CLS__")
-        #print '******'
-        #print res_type
-        #print '******'
         mlabraw.eval(self._session, "clear TMP_CLS__;") # unlikely to need try/finally to ensure clear
         return res_type
 
@@ -588,7 +539,7 @@ class MlabWrap(object):
             # got three cases for nout:
             # 0 -> None, 1 -> val, >1 -> [val1, val2, ...]
             if nout == 0:
-                handle_out(mlabraw.eval(self._session, cmd, log=True))
+                handle_out(mlabraw.eval(self._session, cmd))
                 return
             # deal with matlab-style multiple value return
             resSL = ((["RES%d__" % i for i in range(nout)]))
