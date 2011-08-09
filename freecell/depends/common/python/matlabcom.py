@@ -8,6 +8,7 @@ supported under windows.
 
 Author: Dani Valevski <daniva@gmail.com>
 Dependencies: pywin32, numpy
+Tested Matlab Versions: 2011a 
 License: MIT
 """
 
