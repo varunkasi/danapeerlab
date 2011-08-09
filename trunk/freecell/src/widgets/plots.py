@@ -144,6 +144,8 @@ class AbstractPlot(Widget):
       self.widgets.negative_values.values.choices = ['Remove > 2']
     if self.enable_gating:
       self.widgets.negative_values.values.choices = ['Keep Everything']
+    # Disable negative values for now:
+    self.widgets.negative_values.values.choices = ['Keep Everything']
     if not self._dims_ready(table):
       control_panel_view = stack_lines(
           self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
@@ -208,7 +210,7 @@ class AbstractPlot(Widget):
       control_panel_view = stack_lines(
           self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
           self.widgets.dim_y.view('Y Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
-          self.widgets.negative_values.view('Remove Values', self.widgets.apply, ['Keep Everything', 'Remove Negative', 'Remove > 2'], False),
+#          self.widgets.negative_values.view('Remove Values', self.widgets.apply, ['Keep Everything', 'Remove Negative', 'Remove > 2'], False),
           self.control_panel(table),
           self.widgets.apply.view())
     try:
@@ -336,8 +338,7 @@ class ScatterPlot(AbstractPlot):
 
 class TrueScatterPlot(AbstractPlot):
   """TrueScatterPlot. A scatter plot where each point is a single cell.
-
-  Added by El-ad David Amir, 08.09.2011."""
+  """
   def __init__(self, id, parent, gate=False):
     AbstractPlot.__init__(self, id, parent, gate)
     
