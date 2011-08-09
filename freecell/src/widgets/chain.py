@@ -96,6 +96,7 @@ CHAINABLE_WIDGETS = [
     ('Population Picker', PopulationPicker),
     ('Histogram Plot', HistogramPlot),
     ('Scatter Plot', plots.ScatterPlot),
+    ('True Scatter Plot', plots.TrueScatterPlot),
     ('Density Plot', plots.DensityPlot),
     ('Function Plot', plots.FunctionPlot),
     ('Scatter Gater', plots.ScatterGater),

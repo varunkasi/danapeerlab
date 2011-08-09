@@ -333,6 +333,30 @@ class ScatterPlot(AbstractPlot):
       ret[str(color)] = fig
     return ret
 
+
+class TrueScatterPlot(AbstractPlot):
+  """TrueScatterPlot. A scatter plot where each point is a single cell.
+
+  Added by El-ad David Amir, 08.09.2011."""
+  def __init__(self, id, parent, gate=False):
+    AbstractPlot.__init__(self, id, parent, gate)
+    
+  def name(self):
+    return 'True Scatter Plot'
+  
+  def control_panel(self, table): 
+    return View(self, '')
+
+  def draw_figures(self, table, dim_x, dim_y, range):
+    ret = OrderedDict();
+    fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
+    ax = fig.add_subplot(111)
+    axes.points(ax, table, (dim_x, dim_y))
+    ret[0] = fig;
+    return ret
+
+
+
 class ScatterGater(ScatterPlot):
   def __init__(self, id, parent):
     ScatterPlot.__init__(self, id, parent, True)
