@@ -11,6 +11,23 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.cm as cm
 DPI = 100
 
+class Colorer(object):
+  """Picks a color for a key, and remembers the choice.
+  """
+  def __init__(self):
+    self.assigned_colors = {}
+    self.next_color = 0
+    self.COLOR_LIST = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+
+  def get_color(self, key):
+    if not key in self.assigned_colors:
+      self.assigned_colors[key] = self.COLOR_LIST[self.next_color]
+      self.next_color += 1
+      self.next_color %= len(self.COLOR_LIST)
+    return self.assigned_colors[key]
+    
+  
+
 def new_axes(x_size=256, y_size=256):
   """ Create a new axes object with the specified size in pixels
   """
@@ -147,7 +164,7 @@ def kde2d_color_hist(
   
   
 
-def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1):
+def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1, color=None, shift=0):
   """ Draws a 1d kernel density estimation  histogram. 
   The values in the plot are multiplied by the norm parameter.
   """
@@ -165,7 +182,8 @@ def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1):
   density = np.multiply(density, float(norm))
   #print data.xmesh.shape
   #print data.density.shape
-  plot = ax.plot(xmesh, density)
+  density+=shift
+  plot = ax.plot(xmesh, density, color=color)
   ax.set_title(marker)
   return plot
 

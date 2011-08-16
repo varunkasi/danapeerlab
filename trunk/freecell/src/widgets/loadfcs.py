@@ -35,11 +35,8 @@ class LoadFcs(Widget):
     return []
 
   def get_outputs(self):
-    if not self.widgets.combine_select.values.choices or 'combine' in self.widgets.combine_select.values.choices:
-      return ['table']
-    else:
-      return ['table'] + ['table%d' % i for i in xrange(1, len(self.widgets.fcs_files.values.choices))]
-
+    return 'tables'
+    
   def title(self, short):
    dirname = self.widgets.fcs_dir.value_as_str()
    if not dirname or not os.path.exists(dirname):
@@ -71,12 +68,10 @@ class LoadFcs(Widget):
     ret = {}  
     ret['view'] = '\n'.join(log_text)
     if 'combine' in self.widgets.combine_select.values.choices:
-      ret['table'] = combine_tables(loaded_tables)
-      ret['table'].name = os.path.split(dirname)[-1]
+      ret['tables'] = [combine_tables(loaded_tables)]
+      ret['tables'][0].name = os.path.split(dirname)[-1]
     else:
-      ret['table'] = loaded_tables[0]
-      for i in xrange(1, len(loaded_tables)):
-        ret['table%d' % i] = loaded_tables[i]
+      ret['tables'] = loaded_tables
     return ret
 
   def view(self):
@@ -106,6 +101,6 @@ class LoadFcs(Widget):
     return stack_lines(
         self.widgets.fcs_dir.view('FCS Directory', self.widgets.apply, numeric_validation=False, size=100),
         self.widgets.fcs_files.view('FCS Files', self.widgets.apply, files),
-        self.widgets.combine_select.view('Combine files', self.widgets.apply, [('combine', 'Combine files into one output'), ('seperate', 'Seperate to one output per file')], multiple=False),
+        self.widgets.combine_select.view('Combine files', self.widgets.apply, [('combine', 'Combine files into one table'), ('seperate', 'Seperate to a table list')], multiple=False),
         self.widgets.arcsin_factor.view('Arcsinh Factor', self.widgets.apply, numeric_validation=True, comment='Transformation: arcsinh(value * factor)'),
         self.widgets.apply.view())

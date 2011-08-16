@@ -64,7 +64,7 @@ class Network(Widget):
     self.network_to_widget = {}
     
   def get_inputs(self):
-    return ['table', 'table2', 'table3', 'table4']
+    return ['tables']
 
   def get_outputs(self):
     return []
@@ -77,7 +77,7 @@ class Network(Widget):
   def run(self, **tables):
     pass
 
-  def view(self, **tables):
+  def view(self, tables):
     global NETWORKS
     self.widgets.network.guess_or_remember((tables, 'Network'), [])
     self.widgets.edge_stat.guess_or_remember((tables, 'Network'), [])
@@ -89,16 +89,15 @@ class Network(Widget):
       self.widgets.node_stat.view('Node statistic to show', self.widgets.apply, sorted(NODE_STATS.keys())),
       self.widgets.apply.view())
     
-    data_tables = [t for t in tables.values() if t]
     networks = [n for n in self.widgets.network.values.choices if n in NETWORKS]
     main_views = []
     for network in networks:
       nodes = set()
       edges = set()
       for graph_entry in NETWORKS[network]:
-        nodes.add((graph_entry[0], node_label(graph_entry[0], data_tables, self.widgets.node_stat.values.choices), 0))
-        nodes.add((graph_entry[1], node_label(graph_entry[1], data_tables, self.widgets.node_stat.values.choices), 0))
-        edges.add((edge_label(graph_entry[0], graph_entry[1], data_tables, self.widgets.edge_stat.values.choices), 0, graph_entry[0], graph_entry[1], True))
+        nodes.add((graph_entry[0], node_label(graph_entry[0], tables, self.widgets.node_stat.values.choices), 0))
+        nodes.add((graph_entry[1], node_label(graph_entry[1], tables, self.widgets.node_stat.values.choices), 0))
+        edges.add((edge_label(graph_entry[0], graph_entry[1], tables, self.widgets.edge_stat.values.choices), 0, graph_entry[0], graph_entry[1], True))
       main_views += [self._get_widget('graph_%s' % network).view(nodes, edges)]
       
     main_view = stack_left(*main_views)

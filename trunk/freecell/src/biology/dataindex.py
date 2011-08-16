@@ -106,26 +106,52 @@ class DataIndex(object):
     counts = [self.num_cells_from_entry(e) for e in entries_to_load]
     return reduce(int.__add__, counts, 0)
 
-  def load_table_predicate(self, predicate, arcsin_factor=1):   
-    entries_to_load = [e for e in self.entries if predicate(e.tags)]
-    if not entries_to_load:
-      raise Exception('Could not find data matching the query')
-    tables_to_load = [self.table_from_entry(e, arcsin_factor) for e in entries_to_load]
-    tables_to_load = [t for t in tables_to_load if t]
-    return combine_tables(tables_to_load)
+  def load_table_predicate(self, predicate, arcsin_factor=1):
+    """Loads tables from the index according to the predicate.
+    The function returns a dictionary.
+    The predicate is a function that accepts a dictionary with the tags for a
+    certain item. If the predicate returns False the item is not added to the
+    dictionary. Otherwise, all the items for which the predicate returned x
+    are joine into one datatable which will be placed in dictionary[x].
+    """
+    ret = {}
+    for e in self.entries:
+      key = predicate(e.tags)
+      if not key:
+        continue
+      table = self.table_from_entry(e, arcsin_factor)
+      ret.setdefault(key,[]).append(table)
+    for key in ret.keys():
+      ret[key] = combine_tables(ret[key])
+    return ret
   
   #@cache('data tables')
-  def load_table(self, *args, **kargs):
-    return self._count_load_table(False, *args, **kargs)
+  def load_table(self, criteria, arcsin_factor=1):
+    """Loads datatables according to given criteria dictionary.
+    
+    This dictionary is from string to list of strings. 
+    
+    If a certain key appears in the criteria dictionary, we check 
+    that key in the item's tags. If tags[key] is not in criteria[key],
+    the item is not added. Otherwise it is added.
+    Returned items are aggregated in a dictionary according to the
+    values of tags that appear in the criteria dictionary.
+    
+    Example: load_table({'name'=['a','b']}) will result in a 
+    dictionary dict such that:
+    dict['a'] = all tables for which tag['name'] = a, combined
+    dict['b'] = all tables for which tag['name'] = b, combined
+    """
+    return self._count_load_table(False, criteria, arcsin_factor)
 
-  def count_cells(self, *args, **kargs):
-    return self._count_load_table(True, *args, **kargs)
+  def count_cells(self, criteria):
+    return self._count_load_table(True, criteria)
 
-  def _count_load_table(self, count, *args, **kargs):
+  def _count_load_table(self, count, criteria, arcsin_factor=1):
     def predicate(tags):
-      if not kargs:
+      if not criteria:
         return False
-      for key,val in kargs.iteritems():
+      for key,val in criteria.iteritems():
         if not key in tags:
           return False
         if type(val) in (str, unicode):
@@ -134,11 +160,22 @@ class DataIndex(object):
         else:
           if not tags[key] in val:
             return False
-      return True
+      # we now determine the return value 
+      ret = []
+      for key in criteria.iterkeys():
+        ret.append((key, tags[key]))
+      return tuple(ret)
     if count:
       return self.count_cells_predicate(predicate)
     else:
-      return self.load_table_predicate(predicate)
+      tables = self.load_table_predicate(predicate)
+      for table_key, table in tables.items():
+        table.name = '%s %s' % (os.path.split(self.path)[1], [k[1] for k in table_key])
+        #print table.name
+        for tag, tag_val in table_key:
+          table.tags[tag] = tag_val
+      #print [t.name for t in tables.itervalues()]
+      return tables
 
   
 
@@ -154,8 +191,8 @@ class DataIndex(object):
         value_num,
         self.legends,
         arcsin_factor)
-    if table:
-      services.print_text('<b>Loaded %d cells from entry ...%s</b>' % (table.data.shape[0], entry.filename[-100:]))
+#    if table:
+    services.print_text('<b>Loaded %d cells from entry ...%s</b>' % (table.data.shape[0], entry.filename[-100:]))
     return table
 
   @staticmethod

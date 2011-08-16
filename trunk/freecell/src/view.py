@@ -14,7 +14,7 @@ class View(object):
     self.main_html = main_html
     self.css_files = set(css_files)
     self.js_files = set(js_files)
-    self.images = images
+    self.images = dict(images)
       
   def append_view(self, other_view):
     self.main_html += other_view.main_html

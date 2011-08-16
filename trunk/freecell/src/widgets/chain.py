@@ -53,7 +53,8 @@ A module should also have:
     input_name --> input.    
     It can return None if it doesn't do anything, or return a dictionary of the
     form output_name --> output. An output can be anything, but right now 
-    we only use DataTables. If an output is a datatable, is must have a name.
+    we only use DataTable lists. If an output is a list with datatables,
+    they must have a name.
   - A get_inputs / get_outputs methods that return a list of inputs/outputs
     names.
   - A title(self, short) method that displays the modules title. The short
@@ -64,8 +65,10 @@ Simple modules that can be used as exampels are: FcsLoader and Histogram.
 
 Some Notes:
   - Anything can be passed as input / outputs, but right now we are only using
-    DataTables. This way the user can connect a wrong output to an input by
-    mistake. 
+    DataTable lists. This way the user can connect a wrong output to an input by
+    mistake.
+  - If a user had chosen to connect two outputs to the same inputs, we will use
+    the operator += to concatenate. 
   - The chain GUI displays a menu to help the user decide which outputs should
     be directed to which inputs. Some modules can accept None values for 
     certain inputs. 
@@ -140,7 +143,7 @@ class WidgetInChain(Widget):
     if self.widgets.sub_widget.has_method('get_inputs'):
       inputs = self.widgets.sub_widget.get_inputs()
     else:
-      inputs = ['table']
+      inputs = ['tables']
     self.input_to_select = OrderedDict()
     for i, input in enumerate(inputs):
       w = self._add_widget('input_select_%d' % i, Select)
@@ -168,26 +171,45 @@ class WidgetInChain(Widget):
     if self.widgets.sub_widget.has_method('get_outputs'):
       outputs = self.widgets.sub_widget.get_outputs()
     else:
-      outputs = ['table']
+      outputs = ['tables']
     return outputs
 
-  def get_idx_output(self, input):
-    if self.input_to_select[input].values.choices[0] == 'None':
-      return (None, None)
-    else:
-      idx = int(self.input_to_select[input].values.choices[0].split(',')[0])
-      out = self.input_to_select[input].values.choices[0].split(',')[1]
-      return (idx, out)
-    
+  def get_idx_outputs(self, input):
+    ret = []
+    for input_choice in self.input_to_select[input].values.choices:
+      idx = int(input_choice.split(',')[0])
+      out = input_choice.split(',')[1]
+      ret.append((idx, out))
+    return ret
+  
+  def update_input_after_delete(self, input, deleted_index):
+    choices_to_delete = []
+    for i, input_choice in enumerate(self.input_to_select[input].values.choices):
+      idx = int(input_choice.split(',')[0])
+      out = input_choice.split(',')[1]
+      if idx == deleted_index:
+        choices_to_delete.append(input_choice)
+      if idx > deleted_index:
+        self.input_to_select[input].values.choices[i] = '%s,%s' % (idx - 1, out)
+    for choice in choices_to_delete:
+      self.input_to_select[input].values.choices.remove(choice)
+  
+  def update_input_after_add(self, input, add_index):
+    for i, input_choice in enumerate(self.input_to_select[input].values.choices):
+      idx = int(input_choice.split(',')[0])
+      out = input_choice.split(',')[1]
+      if idx >= add_index:
+        self.input_to_select[input].values.choices[i] = '%s,%s' % (idx + 1, out)
     
   def create_input_map(self, data):
     input_map = {}
     for input in self.input_to_select:
-      idx, out = self.get_idx_output(input)
-      if idx == None:
-        input_map[input] = None
+      connected_outputs = self.get_idx_outputs(input)
+      connected_outputs = [data[idx][out] for idx,out in connected_outputs]
+      if connected_outputs:
+        input_map[input] = sum(connected_outputs[1:], connected_outputs[0])
       else:
-        input_map[input] = data[idx][out]   
+        input_map[input] = None
     return input_map     
       
   def run(self, data):
@@ -230,7 +252,7 @@ class WidgetInChain(Widget):
     input_content_views = []
     for k,v in self.input_to_select.items():
        input_content_views.append(v.view(
-           k, self.widgets.input_apply, possible_inputs, multiple=False))
+           k, self.widgets.input_apply, possible_inputs, multiple=True))
     input_content_views.append(self.widgets.input_apply.view())
     input_content = view.stack_lines(*input_content_views)    
     try:
@@ -284,11 +306,7 @@ class Chain(Widget):
       if w.widgets.delete_button.clicked:
         for following_widget in self.widgets_in_chain[i+1:]:
           for input in following_widget.input_to_select.iterkeys():
-            idx, out = following_widget.get_idx_output(input)
-            if idx == i:
-              following_widget.input_to_select[input].values.choices[0] = 'None'
-            if idx > i:
-              following_widget.input_to_select[input].values.choices[0] = '%s,%s' % (idx - 1, out)
+            following_widget.update_input_after_delete(input, i)
         self.widgets_in_chain.remove(w)
         self._remove_widget(w)
         break
@@ -302,16 +320,14 @@ class Chain(Widget):
         self.widgets_in_chain.insert(i, new_widget)
         for following_widget in self.widgets_in_chain[i+1:]:
          for input in following_widget.input_to_select.iterkeys():
-            idx, out = following_widget.get_idx_output(input)
-            if idx >= i:
-              following_widget.input_to_select[input].values.choices[0] = '%s,%s' % (idx + 1, out)
+            following_widget.update_input_after_add(input, i)
         break
     
   
   def widget_in_chain_to_inputs(self, widget_in_chain, place_in_chain):
     ret = []
     for output in widget_in_chain.get_outputs():
-      if output == 'table':
+      if output == 'tables':
         name = widget_in_chain.title(place_in_chain, True)
       else:
         name = '%s --> %s' % (widget_in_chain.title(place_in_chain, True), output)
@@ -341,8 +357,10 @@ class Chain(Widget):
         if widget_data:
           for item in widget_data.keys():
             from biology.datatable import DataTable
-            if type(item) == DataTable and not item.name:
-              raise Exception('DataTable outputs must have a name')
+            if type(item) == list:
+              for sub_item in item:
+                if type(sub_item) == DataTable and not item.name:
+                  raise Exception('DataTable outputs must have a name')
       except Exception as e:
         logging.exception('Exception in run')
         views.append('Exception when running %s: %s' % (widget.title(i), str(e)))
