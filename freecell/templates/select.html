@@ -65,6 +65,24 @@ $(document).ready(function(){
       multiple: false
 {% endif %}
   });
-});
+  $("#{{ id }}_select").bind("multiselectclick multiselectcheckall multiselectuncheckall", function( event, ui ){
+      
+      // the getChecked method returns an array of DOM elements.
+      // map over them to create a new array of just the values.
+      var checkedValues = $.map($(this).multiselect("getChecked"), function( input ){
+          return input.value;
+      });
+      if (!this.sorted_list_items) {
+		    this.sorted_list_items = checkedValues;
+	    }
 
+	  //alert(this.bla);
+      // update the target based on how many are checked
+      //target.html(
+      //    checkedValues.length
+      //        ? checkedValues.join(', ')
+      //        : 'Please select a checkbox' 
+      //);
+});
+});
 </script>

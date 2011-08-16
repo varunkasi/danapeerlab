@@ -6,9 +6,11 @@ from view import render
 from view import stack_left
 from view import stack_lines
 from biology.dataindex import DataIndex
+from biology.datatable import combine_tables
 from widgets.expander import Expander
 from widgets.select import Select
 from widgets.applybutton import ApplyButton
+from widgets.input import Input
 import settings
    
   
@@ -16,7 +18,8 @@ class PopulationPicker(Widget):
   def __init__(self, id, parent):
     Widget.__init__(self, id, parent)
     self._add_widget('experiment_select', Select)
-    #self._add_widget('arcsin_factor', Input)
+    self._add_widget('combine_select', Select)
+    self._add_widget('arcsin_factor', Input)
     self._add_widget('apply', ApplyButton)
 
     self.experiment_to_widgets = {}
@@ -43,25 +46,32 @@ class PopulationPicker(Widget):
     return []
   
   def get_outputs(self):
-    return ['table']
+    return ['tables']
 
   def run(self):
     ret = {}
-    
-    ret['table'] = self.get_data()
-    ret['table'].name = self.summary
-    ret['view'] = 'Loaded %d cells' % ret['table'].num_cells        
+    tables = self.get_data(arcsin_factor=self.widgets.arcsin_factor.value_as_float())
+    if 'combine' in self.widgets.combine_select.values.choices:
+      ret['tables'] = [combine_tables(tables.values())]
+      ret['tables'][0].name = self.summary
+      ret['view'] = 'loaded %d cells' % ret['tables'][0].num_cells
+    else:
+      ret['tables'] = tables.values()
+      logs = []
+      for key in tables:
+        logs.append('%s: loaded %d cells' % (str(key), tables[key].num_cells))
+      ret['view'] = '\n'.join(logs)        
     return ret
 
-  def get_data(self, count=False):
+  def get_data(self, count=False, arcsin_factor=1):
     index = self._get_index()
     tag_to_vals = {}
     for w in self.experiment_to_widgets[self.experiment]:
       tag_to_vals[w.tag] = w.values.choices
     if count:      
-      return index.count_cells(**tag_to_vals)
+      return index.count_cells(tag_to_vals, arcsin_factor=arcsin_factor)
     else:
-      return index.load_table(**tag_to_vals)
+      return index.load_table(tag_to_vals)
 
   def is_ready(self):
     return self.experiment and self.experiment in self.experiment_to_widgets
@@ -114,6 +124,10 @@ class PopulationPicker(Widget):
     
     for w in self.experiment_to_widgets[self.experiment]:
       w.guess_or_remember((w.tag, w.vals, self.__class__.__name__))
+    
+    self.widgets.combine_select.guess_or_remember(('populationpicker combine_select', self.experiment), ['combine'])
+    self.widgets.arcsin_factor.guess_or_remember(('populationpicker arcsin_factor', self.experiment), 1)
+    
     #if not self.widgets.arcsin_factor.values.value:
     #  self.widgets.arcsin_factor.values.value = '1'
 
@@ -124,7 +138,8 @@ class PopulationPicker(Widget):
         self.widgets.experiment_select.view(
             'Experiment', self.widgets.apply, experiments, False),
         stacked_views,
-#        self.widgets.arcsin_factor.view('Arcsinh Factor', self.widgets.apply, numeric_validation=True, comment='Transformation: arcsinh(value * factor)'),
+        self.widgets.combine_select.view('Combine files', self.widgets.apply, [('combine', 'Combine items into one table'), ('seperate', 'Seperate to one table per parameter combination')], multiple=False),
+        self.widgets.arcsin_factor.view('Arcsinh Factor', self.widgets.apply, numeric_validation=True, comment='Transformation: arcsinh(value * factor)'),
         View(None, '<p style="clear: both"></p>'),
         self.widgets.apply.view())
     if not enable_expander:

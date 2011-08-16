@@ -23,29 +23,6 @@ DimRange = namedtuple('DimRange', ['dim','min', 'max'])
 def dim_range_to_str(dim_range):
   return '[%.3f < %s < %.3f]' % (dim_range.min, dim_range.dim, dim_range.max)
 
-
-#class Stat(Object):
-#  def __init__(self, stat_name, dims, params=[], vals=[]):
-#    self.stat_name = stat_name
-#    self.dims = dims
-#    self.params = params
-#    self.vals = vals
-  
-#def compare_tables(foreground_tables, background, dims, stats, number_of_samples=100, num_cells_per_sample=500):
-#  if num_cells_per_sample > background.num_cells:
-#    raise Exception('Sample is too big')
-  
-  # Create all stats requests:
-  
-  
-  # Create null distributions:
-#  null_stats = []
-#  for i in xrange(number_of_samples):
-#    sample = background.random_sample(num_cells_per_sample)
-#    null_stats.append(sample.stats(stats, dims))
-
-
-  
 def fake_table(*args, **kargs):
   from numpy.random import normal
   num_cells = kargs.get('num_cells', 10000)
@@ -60,16 +37,42 @@ def fake_table(*args, **kargs):
   data = np.array(vals).T
   return DataTable(data, dims)
 
+def ks_test_function(dim):
+  """ Generates functions to be used in distance_table.
+  The function will do the ks test over the given dim on the two tables."""
+  def ks_test(table1, table2):
+    from scipy.stats import ks_2samp
+    ks, p_ks = ks_2samp(table1.get_cols(dim)[0], table2.get_cols(dim)[0])
+    return ks
+  return ks_test
+
+
+def distance_table(tables, distance_func):
+  """ Returns a rectangular table in which cell i,j == cell j,i == distance(tables[i], tables[j]).
+  """
+  num_tables = len(tables)
+  res = np.zeros((num_tables, num_tables))
+  logging.info(
+      'Calculating distance for %d pairs...' % ((num_tables ** 2 - num_tables) / 2))
+  timer = MultiTimer((num_tables ** 2 - num_tables) / 2)
+  for i in xrange(num_tables):
+    for j in xrange(i):
+      distance = distance_func(tables[i], tables[j])
+      res[i,j] = distance
+      res[j,i] = distance
+      timer.complete_task('%s, %s' % (tables[i].name, tables[j].name))
+  return DataTable(res, [t.name for t in tables])
+
+@cache('ks_distances')
+def ks_distances(tables, dim):
+  return distance_table(tables, ks_test_function(dim))  
 
 def combine_tables(datatables):
-  def cache(data):
-    assert len(datatables)
-    assert all([datatables[0].dims == t.dims for t in datatables])
-    new_data = np.concatenate([t.data for t in datatables])
-    data.new_table = DataTable(
-        new_data, datatables[0].dims, datatables[0].legends)
-  data = services.cache((datatables), cache)
-  return data.new_table
+  assert len(datatables)
+  assert all([datatables[0].dims == t.dims for t in datatables])
+  new_data = np.concatenate([t.data for t in datatables])
+  return DataTable(
+      new_data, datatables[0].dims, datatables[0].legends)
 
 class DataTable(AutoReloader):
   """ Represent a table with numeric values. 
@@ -86,20 +89,24 @@ class DataTable(AutoReloader):
   """
   
   
-  def __init__(self, data, dims, legends=None, name=''):
+  def __init__(self, data, dims, legends=None, name='', tags=None):
     """Creates a new data table. This class is immuteable.
     
     data -- a 2 dimension array with the table data
     dims -- string that are associated with table's columns.
     legends -- a list from dim index to a dictionary that gives string
     representation for numeric values.
+    tags -- a dictionary of string to string, gives some properties of the
+    table.
     """
     self.data = data
     self.dims = dims
-    self.name = name
     self.legends = legends
     self.num_cells = float(data.shape[0])
-    self.properties = {}
+    if not tags:
+      self.tags = {}
+    if not name in self.tags:
+      self.tags['name'] = name
 
   def __hash__(self):
     return hash(
@@ -108,7 +115,23 @@ class DataTable(AutoReloader):
   def __getitem__(self, dim):
     return self.get(dim)
   
+  def set_name(self, new_name):
+    self.tags['name'] = new_name
+  
+  def get_name(self):
+    return self.tags['name']
+  
+  def get_tags(self, keys):
+    if type(keys) in (str, unicode):
+      return self.tags[keys]
+    else:
+      return [self.tags[key] for key in keys]
+  
+  name = property(get_name, set_name)
+  
   def get(self, dim, index=0):
+    if not dim in self.dims:
+      raise ValueError('dim %s is not in table %s' % (dim, self.name))
     dim_i = self.dims.index(dim)
     return self.data[index, dim_i]
    
@@ -142,7 +165,7 @@ class DataTable(AutoReloader):
           self.sub_name('%.2f<=%s<%.2f' % (bins[i-1], dim, bins[i]))))
     return splitted
 
-  def gaussian_pdf_compare(self, dim, num_bins=100, gaussian_mean=None, gaussian_std=None):   
+  def gaussian_pdf_compare(self, dim, num_bins=100, gaussian_mean=None, gaussian_std=None):
     # get data
     p = self.get_points(dim)
     if not gaussian_std:
@@ -189,7 +212,7 @@ class DataTable(AutoReloader):
         self.legends,
         self.sub_name('emgm cluster %d' % i)) for i in xrange(k)]
     for t in tables:
-      t.properties['original_table'] = self
+      t.tags['original_table'] = self
     #print llh
     return tables, llh[0][-1]
 
@@ -262,7 +285,7 @@ class DataTable(AutoReloader):
             dim, 100,
             get_stat(s, 'average'),
             get_stat(s, 'std')))
-    
+
     keys = s.keys()
     vals = np.array([s.values()])
     ret = DataTable(vals, keys, None, self.sub_name('stats for %s' % dim))

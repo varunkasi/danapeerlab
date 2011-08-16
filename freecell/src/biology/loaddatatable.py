@@ -197,8 +197,8 @@ def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[], ar
     #  print dim_names
     #else:
     dim_names = [fcs_vars["$P%dS"%(i+1)] for i in xrange(num_dims)]
-    print dim_names
-    print fcs_vars
+    #print dim_names
+    #print fcs_vars
     dims = [marker_from_name(name) for name in dim_names]
     dim_names = [str(dim) for dim in dims]
     data = array(events)

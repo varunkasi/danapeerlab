@@ -99,10 +99,7 @@ class AbstractPlot(Widget):
           ', '.join(dim_y))
           
   def get_inputs(self):
-    if not self.enable_gating:
-      return ['table', 'table2', 'table3', 'table4']
-    else:
-      return ['table']
+    return ['tables']
     
   def get_outputs(self):
     if not self.enable_gating:
@@ -111,10 +108,10 @@ class AbstractPlot(Widget):
       return ['table', 'out']
 
   
-  def run(self, **tables):
+  def run(self, tables):
     if not self.enable_gating:
       return
-    table = tables['table']
+    table = tables[0]
     if not self._dims_ready(table):
       return
     dim_x = self.widgets.dim_x.values.choices[0]
@@ -135,8 +132,8 @@ class AbstractPlot(Widget):
       return data
     
   
-  def view(self, **tables):
-    table = tables['table']
+  def view(self, tables):
+    table = tables[0]
     self.widgets.dim_x.guess_or_remember(('X Axis', options_from_table(table), self.__class__.__name__))
     self.widgets.dim_y.guess_or_remember(('Y Axis', options_from_table(table), self.__class__.__name__))
     self.widgets.negative_values.guess_or_remember(('Remove Values', ['Keep Everything', 'Remove Negative', 'Remove > 2'], self.__class__.__name__))
@@ -215,16 +212,15 @@ class AbstractPlot(Widget):
           self.widgets.apply.view())
     try:
       id_to_fig = []
-      inputs = [input for input in self.get_inputs() if tables[input]]
       with Timer('draw figures'):
-        for input in inputs:
+        for table_input in tables:
           if 'Remove Negative' in self.widgets.negative_values.values.choices:
             min_val = 0
           elif 'Keep Everything' in self.widgets.negative_values.values.choices:
             min_val = -np.inf
           elif 'Remove > 2' in self.widgets.negative_values.values.choices:
             min_val = 2
-          id_to_fig.append(self._draw_figures(tables[input], dim_x, dim_y, tables[inputs[0]], min_val))
+          id_to_fig.append(self._draw_figures(table_input, dim_x, dim_y, tables[0], min_val))
       if self.enable_gating:
         assert len(id_to_fig[0]) == 1
         fig = id_to_fig[0].values()[0]
@@ -238,8 +234,8 @@ class AbstractPlot(Widget):
         lines = []
         for key in id_to_fig[0].iterkeys():
           line = []
-          for i, input in enumerate(inputs):
-            widget_key = self._normalize_id('%s_%s' % (input, key))
+          for i, table_input in enumerate(tables):
+            widget_key = self._normalize_id('%d_%s' % (i, key))
             if not widget_key in self.widgets:
               self._add_widget(widget_key, Figure)
             fig = id_to_fig[i][key]
@@ -253,10 +249,10 @@ class AbstractPlot(Widget):
             line.append(box_view)
             
           lines.append(line)
-        if len(inputs) == 1:
+        if len(tables) == 1:
           main_view = view.stack_left(*[l[0] for l in lines])
         else:
-          main_view = self.widgets.input_table.view([tables[input].name for input in inputs], lines)
+          main_view = self.widgets.input_table.view([table_input.name for table_input in tables], lines)
     except Exception as e:
       main_view = View(self, str(e))
       logging.exception('Exception while drawing %s' % self.name())
