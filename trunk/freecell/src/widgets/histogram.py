@@ -176,7 +176,7 @@ class HistogramPlot(Widget):
             ax.set_yticks(np.arange(0, len(tables)*shift, shift))
             ax.set_yticklabels([t.get_tags(self.widgets.text.values.choices) for t in sorted_tables], size='xx-small')
           # set axes y range:
-          ax.set_ylim(bottom = -0.1)
+          ax.set_ylim(bottom = -0.1, top=0.8+shift*(len(sorted_tables)-1))
           # Make sure we don't create the same widget twice. We create a new widget
           # for every dimension asked. 
           widget_key = self._normalize_id(dim)
@@ -204,12 +204,16 @@ class HistogramPlot(Widget):
       main_views = sorted(main_views, key=itemgetter(0), reverse=True)
       main_views = [v[2] for v in main_views]
       
-      # create legend according to the first plot:
+      # create legend:
       fig = axes.new_figure(300, 300)
-      ax = fig.add_subplot(111)      
+      ax = fig.add_subplot(111)
+      ax.get_xaxis().set_visible(False)
+      ax.get_yaxis().set_visible(False)
       ax.legend(plots_for_legend.values(),
                 plots_for_legend.keys(),
                 loc='center',
+                mode='expand',
+                frameon=False,
                 prop={'size' : 'xx-small'})
       main_views = [self.widgets.legend_figure.view(fig)] + main_views
       main_view = view.stack_left(*main_views)

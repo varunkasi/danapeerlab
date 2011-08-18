@@ -142,13 +142,15 @@ class WidgetInChain(Widget):
     self._add_widget('input_apply', ApplyButton)
     if self.widgets.sub_widget.has_method('get_inputs'):
       inputs = self.widgets.sub_widget.get_inputs()
+      if not type(inputs) in (list, tuple):
+        raise Exception('get_inputs expected to return a list or a tuple')
     else:
       inputs = ['tables']
     self.input_to_select = OrderedDict()
     for i, input in enumerate(inputs):
       w = self._add_widget('input_select_%d' % i, Select)
       self.input_to_select[input] = w
-      w.values.choices = [self.get_default_input(input, previous_widgets)]
+      w.values.choices = self.get_default_input(input, previous_widgets)
   
   def on_load(self):
     self.outputs_from_run = None
@@ -160,8 +162,8 @@ class WidgetInChain(Widget):
   def get_default_input(self, input, previous_widgets):
     for i in xrange(len(previous_widgets)-1, -1, -1):
       if input in previous_widgets[i].get_outputs():
-        return '%d,%s' % (i, input)
-    return 'None'
+        return ['%d,%s' % (i, input)]
+    return []
   
   def get_outputs(self):
     #if self.outputs_from_run == None:
@@ -170,6 +172,8 @@ class WidgetInChain(Widget):
     #return self.outputs_from_run    
     if self.widgets.sub_widget.has_method('get_outputs'):
       outputs = self.widgets.sub_widget.get_outputs()
+      if not type(outputs) in (list, tuple):
+        raise Exception('get_outputs expected to return a list or a tuple')
     else:
       outputs = ['tables']
     return outputs
@@ -233,15 +237,18 @@ class WidgetInChain(Widget):
     def create_inputs_summary():
       summary = []
       for input in self.input_to_select:
-        choice = self.input_to_select[input].values.choices[0]
-        choice_text = [p[1] for p in possible_inputs if p[0] == choice][0]
+        choices = self.input_to_select[input].values.choices
+        choice_texts = [p[1] for p in possible_inputs if p[0] in choices]
         #summary.append('%s: %s' % (input, choice_text))
-        summary.append(choice_text)
+        summary.append('|'.join(choice_texts))
       ret = ', '.join(summary)  
       if ret:
         return 'Inputs: %s ' % ret
       else:
-        return ''
+        if self.input_to_select:
+          return 'Inputs'
+        else:
+          return ''
 
     #input_summary = View(self, '%sOutputs: %s' % (
     #    create_inputs_summary(),
@@ -340,7 +347,7 @@ class Chain(Widget):
     # Run the chain:
     data = []
     views = []
-    possible_inputs = [('None', 'None')]
+    possible_inputs = []
     for i, widget in enumerate(self.widgets_in_chain):
       #logging.info('Getting view for Widget %d %s' % (i, widget.title(i, True)))
       with Timer('Module %d view' % (i+1)):
