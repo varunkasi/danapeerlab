@@ -213,7 +213,7 @@ class MatlabPipe(object):
     # MATLAB 2010a adds an extra >> so we need to remove more spaces.
     # We assume this is the same for previous versions although it was
     # only tested on 2011b, 2010a.
-    if self.matlab_version <= (2010,'c'):
+    if self.matlab_version <= (2010, 'a'):
       temp_str = temp_str[:-len(self.expected_output_end)-6]
     else:
       temp_str = temp_str[:-len(self.expected_output_end)-3]
