@@ -12,7 +12,7 @@ so this module will only work under unix (or mac osx).
 
 Author: Dani Valevski <daniva@gmail.com>
 Dependencies: scipy
-Tested Matlab Versions: 2010a, 2010b, 2011a 
+Tested Matlab Versions: 2009b, 2010a, 2010b, 2011a 
 License: MIT
 """
 
@@ -211,9 +211,7 @@ class MatlabPipe(object):
     # Remove expected output and "\n>>"
     # TODO(dani): Get rid of the unecessary copy.
     # MATLAB 2010a adds an extra >> so we need to remove more spaces.
-    # We assume this is the same for previous versions although it was
-    # only tested on 2011b, 2010a.
-    if self.matlab_version <= (2010, 'a'):
+    if self.matlab_version == (2010, 'a'):
       temp_str = temp_str[:-len(self.expected_output_end)-6]
     else:
       temp_str = temp_str[:-len(self.expected_output_end)-3]
