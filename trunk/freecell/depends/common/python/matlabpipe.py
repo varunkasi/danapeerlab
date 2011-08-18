@@ -12,7 +12,7 @@ so this module will only work under unix (or mac osx).
 
 Author: Dani Valevski <daniva@gmail.com>
 Dependencies: scipy
-Tested Matlab Versions: 2010b, 2011a 
+Tested Matlab Versions: 2010a, 2010b, 2011a 
 License: MIT
 """
 
