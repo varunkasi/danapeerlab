@@ -196,7 +196,15 @@ def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[], ar
     #  dim_names = [fcs_vars["$P%dR"%(i+1)] for i in xrange(num_dims)]
     #  print dim_names
     #else:
-    dim_names = [fcs_vars["$P%dS"%(i+1)] for i in xrange(num_dims)]
+    print '\n'.join([str(x) for x in sorted(fcs_vars.items())])
+    dim_names = []
+    for i in xrange(num_dims):
+      keys_to_try = ["$P%dS" % (i+1), "$P%dN"%(i+1)]
+      keys_found = [key in fcs_vars for key in keys_to_try]
+      if True in keys_found:
+        dim_names.append(fcs_vars[keys_to_try[keys_found.index(True)]])
+      else:
+        dim_names.append('dim%d' % i+1)
     #print dim_names
     #print fcs_vars
     dims = [marker_from_name(name) for name in dim_names]

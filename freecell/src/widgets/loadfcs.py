@@ -31,11 +31,15 @@ class LoadFcs(Widget):
     self._add_widget('apply', ApplyButton)
     self.last_selected_dir = None
 
+  def on_load(self):
+    dirname = self.widgets.fcs_dir.value_as_str()
+    self.widgets.fcs_dir.values.value = os.path.normpath(dirname)
+
   def get_inputs(self):
     return []
 
   def get_outputs(self):
-    return 'tables'
+    return ['tables']
     
   def title(self, short):
    dirname = self.widgets.fcs_dir.value_as_str()
