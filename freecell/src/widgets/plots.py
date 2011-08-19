@@ -111,25 +111,38 @@ class AbstractPlot(Widget):
   def run(self, tables):
     if not self.enable_gating:
       return
-    table = tables[0]
-    if not self._dims_ready(table):
-      return
     dim_x = self.widgets.dim_x.values.choices[0]
     dim_y = self.widgets.dim_y.values.choices[0]
     gate_min_x = self.widgets.gate_min_x.value_as_float()
     gate_max_x = self.widgets.gate_max_x.value_as_float()
     gate_min_y = self.widgets.gate_min_y.value_as_float()
     gate_max_y = self.widgets.gate_max_y.value_as_float()
-    if gate_min_x > table.min(dim_x) or gate_max_x  < table.max(dim_x) or gate_min_y > table.min(dim_y) or gate_max_y  < table.max(dim_y):
-      data = {}
-      range_x = DimRange(dim_x, gate_min_x, gate_max_x)
-      range_y = DimRange(dim_y, gate_min_y, gate_max_y)
-      data['tables'] = [table.gate(range_x, range_y)]
-      data['tables'][0].name = '%s | %s, %s' % (table.name, dim_range_to_str(range_x), dim_range_to_str(range_y))
-      data['tables_out_of_gate'] = [table.gate_out(range_x, range_y)]
-      data['tables_out_of_gate'][0].name = '%s |NOT: %s, %s' % (table.name, dim_range_to_str(range_x), dim_range_to_str(range_y))
-      data['view'] = View(self, 'Table gated, %d cells left' % data['tables'][0].num_cells)
-      return data
+    range_x = DimRange(dim_x, gate_min_x, gate_max_x)
+    range_y = DimRange(dim_y, gate_min_y, gate_max_y)
+    ret_tables = []
+    ret_tables_out = []
+    texts = []
+    for table in tables:
+      if not self._dims_ready(table):
+        raise Exception("The tables don't have the same dims")
+      if gate_min_x > table.min(dim_x) or gate_max_x  < table.max(dim_x) or gate_min_y > table.min(dim_y) or gate_max_y  < table.max(dim_y):
+        gated_in = table.gate(range_x, range_y)
+        gated_in.tags = table.tags.copy()
+        gated_in.name = '%s | %s, %s' % (table.name, dim_range_to_str(range_x), dim_range_to_str(range_y))
+        gated_in.tags['gate_type'] = 'in'
+        gated_out = table.gate_out(range_x, range_y)
+        gated_out.tags = table.tags.copy()
+        gated_out.name = '%s |NOT: %s, %s' % (table.name, dim_range_to_str(range_x), dim_range_to_str(range_y))
+        gated_out.tags['gate_type'] = 'out'
+        ret_tables.append(gated_in)
+        ret_tables_out.append(gated_out)
+        texts.append('Table %s gated, %d cells left' % (gated_in.name, gated_in.num_cells))
+        
+    ret = {}
+    ret['tables'] = ret_tables
+    ret['tables_out_of_gate'] = ret_tables_out
+    ret['view'] = '\n'.join(texts)
+    return ret
     
   
   def view(self, tables):

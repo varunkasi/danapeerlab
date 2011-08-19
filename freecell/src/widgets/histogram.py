@@ -112,6 +112,8 @@ class HistogramPlot(Widget):
     """ The view method of this module draws the control panel and the histograms. 
     We need at least one input to be able to draw something.
     """
+    if not tables:
+      return View(self, 'No tables to show.')
     self.widgets.color.guess_or_remember(('histogram text', tables), 'name')
     self.widgets.text.guess_or_remember(('histogram colors', tables), 'name')
     self.widgets.shift.guess_or_remember(('histogram shift', tables), '0.2')
@@ -204,8 +206,23 @@ class HistogramPlot(Widget):
       main_views = sorted(main_views, key=itemgetter(0), reverse=True)
       main_views = [v[2] for v in main_views]
       
+      
+      
+      
       # create legend:
-      fig = axes.new_figure(300, 300)
+      legened_titles = plots_for_legend.keys()
+      print len(legened_titles)
+      max_title_len = max([len(str(t)) for t in legened_titles])
+      print max_title_len
+      WIDTH_PER_LETTER = 7
+      EXTRA_WIDTH = 60
+      HEIGHT_PER_LINE = 30
+      EXTRA_HEIGHT = 50
+      MIN_X = 300
+      MIN_Y = 100
+      legend_x = max(MIN_X, EXTRA_WIDTH + WIDTH_PER_LETTER * max_title_len)
+      legend_y = max(MIN_Y, EXTRA_HEIGHT + HEIGHT_PER_LINE * len(legened_titles))
+      fig = axes.new_figure(legend_x, legend_y)
       ax = fig.add_subplot(111)
       ax.get_xaxis().set_visible(False)
       ax.get_yaxis().set_visible(False)

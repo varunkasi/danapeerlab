@@ -196,7 +196,7 @@ def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[], ar
     #  dim_names = [fcs_vars["$P%dR"%(i+1)] for i in xrange(num_dims)]
     #  print dim_names
     #else:
-    print '\n'.join([str(x) for x in sorted(fcs_vars.items())])
+    #print '\n'.join([str(x) for x in sorted(fcs_vars.items())])
     dim_names = []
     for i in xrange(num_dims):
       keys_to_try = ["$P%dS" % (i+1), "$P%dN"%(i+1)]

@@ -81,19 +81,21 @@ class Select(Widget):
       choices = self.values.choices
     if choices == None:
       choices = []
-      
-    options = add_titles_if_needed(options)
-    #print options
-    # Now options is either a list of title,val or a list of (group_name, group_values)
-    if not type(options[0][1]) in (tuple, list):
-      options = [('None', options)]
-    #print options
-    # Now options is either a list of (group_name, list(titles)) or a list of (group_name, list(titles, vals))
-    options = [(o[0], add_titles_if_needed(o[1])) for o in options]
-    #print options
-    # Now add selected state the list so that we have (group_name list(titles, vals, select))
-    options = [(o[0], add_selected_state(o[1])) for o in options]
-    #print options
+    if not options:
+      options = []
+    else:  
+      options = add_titles_if_needed(options)
+      #print options
+      # Now options is either a list of title,val or a list of (group_name, group_values)
+      if not type(options[0][1]) in (tuple, list):
+        options = [('None', options)]
+      #print options
+      # Now options is either a list of (group_name, list(titles)) or a list of (group_name, list(titles, vals))
+      options = [(o[0], add_titles_if_needed(o[1])) for o in options]
+      #print options
+      # Now add selected state the list so that we have (group_name list(titles, vals, select))
+      options = [(o[0], add_selected_state(o[1])) for o in options]
+      #print options
     
     html = render('select.html', {
         'height' : 300,
