@@ -71,7 +71,7 @@ class PopulationPicker(Widget):
     if count:      
       return index.count_cells(tag_to_vals, arcsin_factor=arcsin_factor)
     else:
-      return index.load_table(tag_to_vals)
+      return index.load_table(tag_to_vals, arcsin_factor=arcsin_factor))
 
   def is_ready(self):
     return self.experiment and self.experiment in self.experiment_to_widgets
