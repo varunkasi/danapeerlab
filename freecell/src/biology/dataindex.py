@@ -106,7 +106,7 @@ class DataIndex(object):
     counts = [self.num_cells_from_entry(e) for e in entries_to_load]
     return reduce(int.__add__, counts, 0)
 
-  def load_table_predicate(self, predicate, arcsin_factor=1):
+  def load_table_predicate(self, predicate, arcsin_factor):
     """Loads tables from the index according to the predicate.
     The function returns a dictionary.
     The predicate is a function that accepts a dictionary with the tags for a
@@ -126,7 +126,7 @@ class DataIndex(object):
     return ret
   
   #@cache('data tables')
-  def load_table(self, criteria, arcsin_factor=1):
+  def load_table(self, criteria, arcsin_factor):
     """Loads datatables according to given criteria dictionary.
     
     This dictionary is from string to list of strings. 
@@ -147,7 +147,7 @@ class DataIndex(object):
   def count_cells(self, criteria):
     return self._count_load_table(True, criteria)
 
-  def _count_load_table(self, count, criteria, arcsin_factor=1):
+  def _count_load_table(self, count, criteria, arcsin_factor):
     def predicate(tags):
       if not criteria:
         return False
@@ -168,7 +168,7 @@ class DataIndex(object):
     if count:
       return self.count_cells_predicate(predicate)
     else:
-      tables = self.load_table_predicate(predicate)
+      tables = self.load_table_predicate(predicate, arcsin_factor)
       for table_key, table in tables.items():
         table.name = '%s %s' % (os.path.split(self.path)[1], [k[1] for k in table_key])
         #print table.name
@@ -182,7 +182,7 @@ class DataIndex(object):
   def num_cells_from_entry(self, entry):
     return get_num_events(os.path.join(self.path, entry.filename))
 
-  def table_from_entry(self, entry, arcsin_factor=1):
+  def table_from_entry(self, entry, arcsin_factor):
     value_str = [entry.tags.get(t, NO_VALUE_TAG) for t in self.tags]
     value_num = [self.legends[i][val] for i,val in enumerate(value_str)]    
     table =  load_data_table(

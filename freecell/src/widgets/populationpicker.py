@@ -50,7 +50,7 @@ class PopulationPicker(Widget):
 
   def run(self):
     ret = {}
-    tables = self.get_data(arcsin_factor=self.widgets.arcsin_factor.value_as_float())
+    tables = self.get_data(count=False, arcsin_factor=self.widgets.arcsin_factor.value_as_float())
     if 'combine' in self.widgets.combine_select.values.choices:
       ret['tables'] = [combine_tables(tables.values())]
       ret['tables'][0].name = self.summary
@@ -63,7 +63,7 @@ class PopulationPicker(Widget):
       ret['view'] = '\n'.join(logs)        
     return ret
 
-  def get_data(self, count=False, arcsin_factor=1):
+  def get_data(self, count, arcsin_factor):
     index = self._get_index()
     tag_to_vals = {}
     for w in self.experiment_to_widgets[self.experiment]:
