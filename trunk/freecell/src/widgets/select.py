@@ -75,7 +75,8 @@ class Select(Widget):
       return items
     
     def add_selected_state(items):
-      return [(o[0], o[1], o[0] in choices) for o in items]
+      choices_as_str = [str(x) for x in choices]
+      return [(o[0], o[1], str(o[0]) in choices_as_str) for o in items]
       
     if choices == None:
       choices = self.values.choices

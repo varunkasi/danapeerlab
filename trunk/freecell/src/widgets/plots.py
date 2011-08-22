@@ -35,6 +35,7 @@ class AbstractPlot(Widget):
     self._add_widget('dim_x', Select)
     self._add_widget('dim_y', Select)
     self._add_widget('negative_values', Select)
+    self._add_widget('tables_to_show', Select)
 #    self._add_widget('min_x', Input)
 #    self._add_widget('min_y', Input)
 #    self._add_widget('max_x', Input)
@@ -146,7 +147,13 @@ class AbstractPlot(Widget):
     
   
   def view(self, tables):
+    if not tables:
+      return View(self, "No tables to show")
     table = tables[0]
+    if self.enable_gating:
+      self.widgets.tables_to_show.guess_or_remember(('plot tables to show gating', tables), ['0'])
+    else:
+      self.widgets.tables_to_show.guess_or_remember(('plot tables to show', tables), [str(i) for i,t in enumerate(tables)])
     self.widgets.dim_x.guess_or_remember(('X Axis', options_from_table(table), self.__class__.__name__))
     self.widgets.dim_y.guess_or_remember(('Y Axis', options_from_table(table), self.__class__.__name__))
     self.widgets.negative_values.guess_or_remember(('Remove Values', ['Keep Everything', 'Remove Negative', 'Remove > 2'], self.__class__.__name__))
@@ -200,6 +207,7 @@ class AbstractPlot(Widget):
       control_panel_view = stack_lines(
           self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
           self.widgets.dim_y.view('Y Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
+          self.widgets.tables_to_show.view('Table to show', self.widgets.apply, [(i, t.name) for i,t in enumerate(tables)], False),
           self.control_panel(table),
           #self.widgets.min_x.view('Min X',  self.widgets.apply, [('Default', table.min(dim_x))]),
           #self.widgets.min_y.view('Min Y',  self.widgets.apply, [('Default', table.min(dim_y))]),
@@ -220,13 +228,15 @@ class AbstractPlot(Widget):
       control_panel_view = stack_lines(
           self.widgets.dim_x.view('X Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
           self.widgets.dim_y.view('Y Axis', self.widgets.apply, options_from_table(table), not self.enable_gating),
+          self.widgets.tables_to_show.view('Tables to show', self.widgets.apply, [(i, t.name) for i,t in enumerate(tables)], True),
 #          self.widgets.negative_values.view('Remove Values', self.widgets.apply, ['Keep Everything', 'Remove Negative', 'Remove > 2'], False),
           self.control_panel(table),
           self.widgets.apply.view())
+    tables_to_show = [t for i,t in enumerate(tables) if str(i) in [str(s) for s in self.widgets.tables_to_show.values.choices]]
     try:
       id_to_fig = []
       with Timer('draw figures'):
-        for table_input in tables:
+        for table_input in tables_to_show:
           if 'Remove Negative' in self.widgets.negative_values.values.choices:
             min_val = 0
           elif 'Keep Everything' in self.widgets.negative_values.values.choices:
@@ -247,7 +257,7 @@ class AbstractPlot(Widget):
         lines = []
         for key in id_to_fig[0].iterkeys():
           line = []
-          for i, table_input in enumerate(tables):
+          for i in xrange(len(id_to_fig)):
             widget_key = self._normalize_id('%d_%s' % (i, key))
             if not widget_key in self.widgets:
               self._add_widget(widget_key, Figure)
@@ -265,7 +275,7 @@ class AbstractPlot(Widget):
         if len(tables) == 1:
           main_view = view.stack_left(*[l[0] for l in lines])
         else:
-          main_view = self.widgets.input_table.view([table_input.name for table_input in tables], lines)
+          main_view = self.widgets.input_table.view([table_input.name for table_input in tables_to_show], lines)
     except Exception as e:
       main_view = View(self, str(e))
       logging.exception('Exception while drawing %s' % self.name())
