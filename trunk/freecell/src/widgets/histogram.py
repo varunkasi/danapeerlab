@@ -60,6 +60,8 @@ class HistogramPlot(Widget):
     self._add_widget('apply', ApplyButton)
     self._add_widget('shift', Input)
     self._add_widget('legend_figure', Figure)
+    self._add_widget('trim', Select)
+    self._add_widget('trim_thresh', Input)
   
   def on_load(self):
     if not 'text' in self.widgets:
@@ -114,12 +116,14 @@ class HistogramPlot(Widget):
     """
     if not tables:
       return View(self, 'No tables to show.')
-    self.widgets.color.guess_or_remember(('histogram text', tables), 'name')
-    self.widgets.text.guess_or_remember(('histogram colors', tables), 'name')
+    self.widgets.color.guess_or_remember(('histogram text', tables), ['name'])
+    self.widgets.text.guess_or_remember(('histogram colors', tables), ['name'])
     self.widgets.shift.guess_or_remember(('histogram shift', tables), '0.2')
-    self.widgets.shift.guess_or_remember(('histogram sort inside', tables), 'similarity')
-    self.widgets.shift.guess_or_remember(('histogram sort outside', tables), 'sort')
-    
+    self.widgets.sort_inside.guess_or_remember(('histogram sort inside', tables), ['similarity'])
+    self.widgets.sort_outside.guess_or_remember(('histogram sort outside', tables), ['sort'])
+    self.widgets.trim.guess_or_remember(('histogram trim', tables), ['no'])
+    self.widgets.trim_thresh.guess_or_remember(('histogram trim thresh', tables), '0')
+
     sort_inside_options = [('unsort', 'Keep original order'), ('similarity', 'Put similar curves together')]
     sort_inside_options += [(x, 'Sort by %s' % x) for x in tables[0].tags.keys()]
     
@@ -135,6 +139,9 @@ class HistogramPlot(Widget):
         self.widgets.sort_outside.view('Plot sorting', self.widgets.apply, 
                                       [('sort', 'Put plots with many differences first'), ('unsort', 'Keep original order')],
                                       multiple=False),
+        self.widgets.trim.view('Trim plots', self.widgets.apply,
+            [('yes', 'Convert values lower than threshold to 0'), ('no', 'Don\'t trim')], multiple=False),
+        self.widgets.trim_thresh.view('Trim threshold', self.widgets.apply),
         self.widgets.apply.view())
     main_views = []
     shift = self.widgets.shift.value_as_float()
@@ -158,8 +165,11 @@ class HistogramPlot(Widget):
           if sort_method == 'unsort':
             sorted_tables = tables
           elif sort_method == 'similarity':
+            thresh = None
+            if self.widgets.trim.get_choices()[0] == 'yes':
+              thresh = self.widgets.trim_thresh.value_as_float()
             # get distances table:
-            distances = datatable.ks_distances(tables, dim)
+            distances = datatable.ks_distances(tables, dim, thresh)
             # sort by distance
             sorted_tables = greedy_distance_sort(distances, tables)
           else:
@@ -169,8 +179,12 @@ class HistogramPlot(Widget):
           for i, table in enumerate(sorted_tables):
             color_tags = self.widgets.color.values.choices
             color_key = tuple([table.tags[c] for c in color_tags])
+            min_x = None
+            if self.widgets.trim.get_choices()[0] =='yes':
+              min_x = self.widgets.trim_thresh.value_as_float()
             plot = axes.kde1d(ax, table, dim,
                               color=colorer.get_color(color_key),
+                              min_x=min_x,
                               shift=shift*i)
             plots_for_legend[color_key] = plot
           # Add ticks with table names:
@@ -212,7 +226,7 @@ class HistogramPlot(Widget):
       # create legend:
       legened_titles = plots_for_legend.keys()
       print len(legened_titles)
-      max_title_len = max([len(str(t)) for t in legened_titles])
+      max_title_len = max([len(str(t)) for t in legened_titles] + [0])
       print max_title_len
       WIDTH_PER_LETTER = 7
       EXTRA_WIDTH = 60

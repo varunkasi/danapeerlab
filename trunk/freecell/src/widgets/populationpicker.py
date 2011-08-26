@@ -89,9 +89,12 @@ class PopulationPicker(Widget):
     index = self._get_index()
     
     def summary_from_widget(w, index):
-      if set(index.all_values_for_tag(w.tag)) == set(w.values.choices):
+      choices = []
+      if w.values.choices:
+        choices = w.values.choices
+      if set(index.all_values_for_tag(w.tag)) == set(choices):
         return ''
-      return '[%s]' % ', '.join(w.values.choices)
+      return '[%s]' % ', '.join(choices)
         
       #if set(index.all_values_for_tag(w.tag)) == set(w.values.choices):
       #  return '%s: any' % w.tag
@@ -123,7 +126,7 @@ class PopulationPicker(Widget):
       self.experiment_to_widgets[self.experiment] = widgets
     
     for w in self.experiment_to_widgets[self.experiment]:
-      w.guess_or_remember((w.tag, w.vals, self.__class__.__name__))
+      w.guess_or_remember((w.tag, w.vals, self.__class__.__name__), [])
     
     self.widgets.combine_select.guess_or_remember(('populationpicker combine_select', self.experiment), ['combine'])
     self.widgets.arcsin_factor.guess_or_remember(('populationpicker arcsin_factor', self.experiment), 1)

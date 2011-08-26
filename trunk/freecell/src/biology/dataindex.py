@@ -5,6 +5,7 @@ import sys
 # uncomment when using the main:
 sys.path.insert(0, '.')
 from depends import fix_path
+from tagorder import tag_sort_key
 fix_path(True)
 
 from scriptservices import services
@@ -98,7 +99,7 @@ class DataIndex(object):
 
   def all_values_for_tag(self, tag_name):
     ret = list(set([e.tags[tag_name] for e in self.entries if tag_name in e.tags]))
-    ret.sort()
+    ret.sort(key=tag_sort_key(tag_name))
     return ret
 
   def count_cells_predicate(self, predicate):

@@ -16,6 +16,7 @@ from layout import Layout
 from timer import Timer
 from expander import Expander
 from miniexpander import MiniExpander
+from multicompare import MultiCompare
 from freecellmenu import FreecellMenu
 from histogram import HistogramPlot
 from loadfcs import LoadFcs
@@ -98,6 +99,7 @@ CHAINABLE_WIDGETS = [
     ('FCS Loader', LoadFcs),
     ('Population Picker', PopulationPicker),
     ('Histogram Plot', HistogramPlot),
+    ('Multi Compare', MultiCompare),
     ('Scatter Plot', plots.ScatterPlot),
     ('True Scatter Plot', plots.TrueScatterPlot),
     ('Density Plot', plots.DensityPlot),

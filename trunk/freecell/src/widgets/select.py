@@ -4,7 +4,6 @@ import os
 import pickle
 from odict import OrderedDict
 from cache import CACHE
-from cache import make_unique_str
 from widget import Widget
 from view import View
 from view import render
@@ -36,25 +35,14 @@ class Select(Widget):
     Widget.__init__(self, id, parent)
     self.values.choices = None
 
+  def get_choices(self):
+    if not self.values.choices:
+      return []
+    return self.values.choices
+    
   def guess_or_remember(self, key, default_value=None):
-    """ Used to suggest a default value for the widget, or record the selected 
-    value. 
-    If there is no value in values.choices:
-      The method will look for a value under 'key', and set values.choices
-      to that value. If there is no value, values.choices is set to default_value.
-    If there is a value in values.choices:
-      The value is saved under 'key'.
-    """
-    select_dict = CACHE.get('select_dict', none_if_not_found=True)
-    key = make_unique_str(key)
-    if not select_dict:
-      select_dict = {}
-    if self.values.choices == None:
-      self.values.choices = select_dict.get(key, default_value)
-    else:
-      select_dict[key] = self.values.choices
-      CACHE.put('select_dict', select_dict, 'select')   
-   
+    return Widget._guess_or_remember(self, 'choices', key, default_value)
+
   def view(self, text, save_button, options, multiple=True, group_buttons=[], choices=None, comment=''):
     """ Returns a view of the select widget.
     text is a the title of the widget. 

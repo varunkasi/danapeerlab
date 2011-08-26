@@ -37,15 +37,30 @@ def fake_table(*args, **kargs):
   data = np.array(vals).T
   return DataTable(data, dims)
 
-def ks_test_function(dim):
+def ks_test_function(dim, thresh):
   """ Generates functions to be used in distance_table.
   The function will do the ks test over the given dim on the two tables."""
   def ks_test(table1, table2):
     from scipy.stats import ks_2samp
-    ks, p_ks = ks_2samp(table1.get_cols(dim)[0], table2.get_cols(dim)[0])
+    sample1 = table1.get_cols(dim)[0]
+    sample2 = table2.get_cols(dim)[0]
+    if thresh != None:
+      sample1[sample1<thresh] = 0
+      sample2[sample2<thresh] = 0
+    ks, p_ks = ks_2samp(sample1, sample2)
     return ks
   return ks_test
 
+
+def tables_mean(tables, p=1):
+  """ Returns a table for which every data cell is the average of the corresponsing data
+  cell in 'tables'
+  """
+  new_data = np.sum([t.data ** p for t in tables], axis=0)
+  new_data = new_data / float(len(tables))
+  new_data = new_data ** (1./p)
+  return DataTable(new_data, tables[0].dims)
+  
 
 def distance_table(tables, distance_func):
   """ Returns a rectangular table in which cell i,j == cell j,i == distance(tables[i], tables[j]).
@@ -64,8 +79,8 @@ def distance_table(tables, distance_func):
   return DataTable(res, [t.name for t in tables])
 
 @cache('ks_distances')
-def ks_distances(tables, dim):
-  return distance_table(tables, ks_test_function(dim))  
+def ks_distances(tables, dim, thresh=None):
+  return distance_table(tables, ks_test_function(dim, thresh))  
 
 def combine_tables(datatables):
   assert len(datatables)
@@ -254,9 +269,14 @@ class DataTable(AutoReloader):
 
     return np.corrcoef(self.get_cols(dim1), self.get_cols(dim2))[0,1]
 
-  def get_average(self, dim):
-    p = self.get_points(dim)
-    return np.average(p)
+  def get_average(self, *dims):
+    """Returns averages for the given dim. If there is only one dim
+    a number is returned. Otherwise an array with averages is returned."""
+    p = self.get_points(*dims)
+    ret = np.average(p, axis=0)
+    if ret.size == 1:
+      return ret[0]
+    return ret
 
   def get_std(self, dim):
     p = self.get_points(dim)
