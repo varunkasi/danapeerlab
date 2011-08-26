@@ -14,23 +14,7 @@ class Input(Widget):
     self.values.value = None
 
   def guess_or_remember(self, key, default_value=None):
-    """ Used to suggest a default value for the widget, or record the selected 
-    value. 
-    If there is no value in values.value:
-      The method will look for a value under 'key', and set values.value
-      to that value. If there is no value, values.value is set to default_value.
-    If there is a value in values.value:
-      The value is saved under 'key'.
-    """
-    input_dicr = CACHE.get('input_dict', none_if_not_found=True)
-    key = make_unique_str(key)
-    if not input_dicr:
-      input_dicr = {}
-    if self.values.value == None:
-      self.values.value = input_dicr.get(key, default_value)
-    else:
-      input_dicr[key] = self.values.value
-      CACHE.put('input_dict', input_dicr, 'input')
+    return Widget._guess_or_remember(self, 'value', key, default_value)
       
   def value_as_str(self):
     return self.values.value

@@ -1,4 +1,6 @@
 ﻿#!/usr/bin/env python
+from cache import make_unique_str
+from cache import CACHE
 from view import View
 from view import render
 from attrdict import AttrDict
@@ -48,6 +50,7 @@ class Widget(object):
     self.unique_counter = 0
     self.widgets = AttrDict()
     self.values = AttrDict()
+    self.value_name_to_cache_key = {}
          
   def has_method(self, name):
     """ Tests is the widget has a method with the given name.
@@ -58,6 +61,7 @@ class Widget(object):
     self.values[name] = val
     if self.has_method('on_set_value'):
       self.on_set_value(name, val)
+    self._save_value_if_needed(name, val)
 
   def set_default(self, name, val):
     """ Sets a value if no value was defined. """
@@ -108,6 +112,44 @@ class Widget(object):
       ret = '%s_%d' % (self.id, self.unique_counter)
     self.unique_counter += 1
     return ret
+
+  def _save_value_if_needed(self, value_name, value):
+    """ This function saves the given value according to the last
+    key used in _guess_or_remember.
+    """
+    if not value_name in self.value_name_to_cache_key:
+      return
+    cache_key = self.value_name_to_cache_key[value_name]
+    dict_name = str(type(self))
+    cache_dict = CACHE.get(dict_name, none_if_not_found=True)
+    if not cache_dict:
+      cache_dict = {}
+    cache_dict[cache_key] = value
+    CACHE.put(dict_name, cache_dict, dict_name)
+
+  def _guess_or_remember(self, value_name, key, default_value=None):
+    """ Used to suggest a default for a certain value of the widget, or
+    record the selected value. 
+    If there is no value in values.choices:
+      The method will look for a value under 'key', and set values.[value_name]
+      to that value. If there is no value, values.[value_name] is set to default_value.
+    If there is a value in values.choices:
+      The value is saved under 'key'.
+      
+    Any subsequent changes to value_name are saved under 'key'.
+    """
+    key = make_unique_str(key)
+    dict_name = str(type(self))
+    cache_dict = CACHE.get(dict_name, none_if_not_found=True)
+    if not cache_dict:
+      cache_dict = {}
+    if self.values[value_name] == None:
+      self.values[value_name] = cache_dict.get(key, default_value)
+    else:
+      cache_dict[key] = self.values[value_name]
+      CACHE.put(dict_name, cache_dict, dict_name)
+    # make sure we will update the value in cache when it changes:
+    self.value_name_to_cache_key[value_name] = key
 
   def __str__(self):
     my_str = '%s' % '{%s}' % ','.join(['%s: %s' % (k,v) for k,v in self.values.items()])

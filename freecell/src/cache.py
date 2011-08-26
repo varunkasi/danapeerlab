@@ -140,7 +140,7 @@ def make_unique_str(obj):
     widget_name = type(obj).__name__
     sub_widgets_str = make_unique_str(obj.widgets)
     vals_str = make_unique_str(obj.values)
-    return '<Widget %s %s %s>' % (widget_name, sub_widgets_str, vals_str)
+    return '<Widget %s %s %s %s>' % (widget_name, obj.id, sub_widgets_str, vals_str)
   elif type(obj) == types.FunctionType:
     return '<function %s %s>' % (obj.__name__, obj.__module__)
   elif type(obj) == types.MethodType:
