@@ -54,8 +54,10 @@ def normalize_marker_name(name):
 def marker_from_name(name):
   norm_name = normalize_marker_name(name)
   if not norm_name in _name_to_marker:
-    print norm_name
-    _name_to_marker[norm_name] = Marker([norm_name], 'other', True)
+    group = 'other'
+    if norm_name[:2].lower() == 'cd':
+      group = 'surface'
+    _name_to_marker[norm_name] = Marker([norm_name], group, True)
     #logging.error('Could not find marker name %s (%s)' % (name, norm_name))
   return _name_to_marker.get(norm_name)
 
