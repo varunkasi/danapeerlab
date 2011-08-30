@@ -55,7 +55,7 @@ def marker_from_name(name):
   norm_name = normalize_marker_name(name)
   if not norm_name in _name_to_marker:
     print norm_name
-    _name_to_marker[norm_name] = Marker([name], 'other', True)
+    _name_to_marker[norm_name] = Marker([norm_name], 'other', True)
     #logging.error('Could not find marker name %s (%s)' % (name, norm_name))
   return _name_to_marker.get(norm_name)
 
