@@ -241,15 +241,16 @@ class DataTable(AutoReloader):
     
     # we need to convert the index array from matlab to python (and remember
     # that python is 0-based and not 1-based)
-    idx = idx.astype('int').T[0]
+    idx = idx.astype('int')
+    
     new_data = self.data[idx]
     tables = [DataTable(
         self.data[idx==(i+1)],
         self.dims,
         self.legends,
         self.sub_name('kmeans cluster %d' % i)) for i in xrange(k)]
-    for t in tables:
-      t.properties['original_table'] = self
+    #for t in tables:
+    #  t.properties['original_table'] = self
     return tables
 
   def get_stats_multi_dim(self, *dims):

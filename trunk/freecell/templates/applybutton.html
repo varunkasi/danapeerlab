@@ -7,7 +7,7 @@ $(document).ready(function(){
 	$("#{{ id }}").button();
   $("#{{ id }}").click(function() {
     if (validate("{{ widget_id }}")) {
-      $.blockUI({ message: '<h1><img src="/static/images/ajax-loader.gif" /> Loading...</h1>' });
+      $.blockUI({ message: '<h1><img src="/static/images/ajax-loader.gif" /> Working...</h1>' });
       save("{{ widget_id }}");
       window.location.reload();
     }

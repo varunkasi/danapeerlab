@@ -48,13 +48,13 @@ $(document).ready(function(){
 	$("#{{ id }}_select").multiselect({
       minWidth: 300,
       height: "auto",
-      checkAllText: "Select Any",
+      checkAllText: "Select All",
       uncheckAllText: "Select None",
       noneSelectedText: "None",
       selectedList: 5,
       selectedText: function(checked, total, arr) {
           if (checked == total && checked > 1) {
-            return "Any";
+            return "All";
           }
           arr = jQuery.map(arr, function (obj) { return obj.title; });
           return arr.join(", ");

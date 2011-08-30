@@ -20,6 +20,7 @@ from multicompare import MultiCompare
 from freecellmenu import FreecellMenu
 from histogram import HistogramPlot
 from loadfcs import LoadFcs
+from clustering import KMeansClusterer
 import plots
 from network import Network
 from populationpicker import PopulationPicker
@@ -100,9 +101,10 @@ CHAINABLE_WIDGETS = [
     ('Population Picker', PopulationPicker),
     ('Histogram Plot', HistogramPlot),
     ('Multi Compare', MultiCompare),
+    ('Kmeans', KMeansClusterer),
+    ('Density Plot', plots.DensityPlot),
     ('Scatter Plot', plots.ScatterPlot),
     ('True Scatter Plot', plots.TrueScatterPlot),
-    ('Density Plot', plots.DensityPlot),
     ('Function Plot', plots.FunctionPlot),
     ('Scatter Gater', plots.ScatterGater),
     ('Density Gater', plots.DensityGater),
@@ -129,7 +131,25 @@ def widget_name_to_type(name):
     kargs = entries[0][3]
   return entries[0][1], args, kargs
 
+class WidgetWithControlPanel(Widget):
+  """A widget that has control panel. You can inherit from this class
+  and implement a main_view and a control_panel methods."""
+  def __init__(self, id, parent):
+    Widget.__init__(self, id, parent)
+    self._add_widget('layout', LeftPanel)
+      
+  def view(self, *args):
+    if not any(args):
+      return View(self, 'No tables to display')
+    control_panel_view = self.control_panel(*args)
+    try:
+      main_view = self.main_view(*args)
+    except Exception as e:
+      logging.exception('Exception in main_view')
+      main_view = View(self, str(e))     
+    return self.widgets.layout.view(main_view, control_panel_view)     
   
+
 class WidgetInChain(Widget):
   def __init__(self, id, parent, sub_widget_type, previous_widgets, args, kargs):
     Widget.__init__(self, id, parent)

@@ -8,6 +8,7 @@ from biology.tagorder import multiple_tag_sort_key
 from multitimer import MultiTimer
 from operator import itemgetter
 from widget import Widget
+from widgetwithcontrolopanel import WidgetWithControlPanel
 from view import View
 from view import render
 from view import stack_lines
@@ -15,7 +16,6 @@ from select import options_from_table
 from input import Input
 from applybutton import ApplyButton
 from figure import Figure
-from leftpanel import LeftPanel
 from areaselect import AreaSelect
 from odict import OrderedDict
 from table import Table
@@ -23,12 +23,12 @@ from select import Select
 from cache import cache
 from motionchart import MotionChart
 
-class MultiCompare(Widget):
+class MultiCompare(WidgetWithControlPanel):
   """ This module allows the user to compare multiple populations. The
   populations are overlayed over a 2d map.
   """
   def __init__(self, id, parent):
-    Widget.__init__(self, id, parent)
+    WidgetWithControlPanel.__init__(self, id, parent)
     self._add_widget('average_dims', Select)
     self._add_widget('std_dims', Select)
     self._add_widget('scroll_tags', Select)
@@ -37,7 +37,6 @@ class MultiCompare(Widget):
     self._add_widget('reduce_dims2', Select)
     self._add_widget('reduce_method', Select)
     self._add_widget('apply', ApplyButton)
-    self._add_widget('layout', LeftPanel)
     self._add_widget('motion_chart', MotionChart)
   
     
@@ -74,7 +73,6 @@ class MultiCompare(Widget):
             break
         if not skip and not table in ret:
           ret.append(table)
-    print ret
     return {'tables':ret}
   
   def separate_tables_by_time(self, tables, time_col):
@@ -115,12 +113,7 @@ class MultiCompare(Widget):
     return Y.T[0], Y.T[1], eig
   
   def control_panel(self, tables):
-    if self.widgets.motion_chart.values.state == None:
-      print 'was none'
     self.widgets.motion_chart.guess_or_remember(('multicompare motionchart', tables), None)
-    if self.widgets.motion_chart.values.state == None:
-      print 'modified state'
-      self.widgets.motion_chart.modify_state(0, 0, 0, 0)
     self.widgets.average_dims.guess_or_remember(('multicompare average dims', tables), tables[0].dims)
     self.widgets.std_dims.guess_or_remember(('multicompare std dims', tables), [])
     self.widgets.reduce_dims1.guess_or_remember(('multicompare reduce dims', tables), [])
@@ -146,6 +139,7 @@ class MultiCompare(Widget):
         self.widgets.apply.view())
     return control_panel_view
   
+  @cache('multicompare')
   def main_view(self, tables):
     comments = []
     col_names = []
@@ -232,16 +226,3 @@ class MultiCompare(Widget):
     if not self.widgets.motion_chart.values.state:
       self.widgets.motion_chart
     return self.widgets.motion_chart.view(col_names, zip(*cols), [str(t) for t in tag_combinations_found], '\n'.join(comments))
-  
-  @cache('multicompare')
-  def view(self, tables):
-    if not tables:
-      return View(self, 'No tables to display')
-    control_panel_view = self.control_panel(tables)
-    try:
-      main_view = self.main_view(tables)
-    except Exception as e:
-      logging.exception('Exception in main_view')
-      main_view = View(self, str(e))     
-    return self.widgets.layout.view(main_view, control_panel_view)     
- 
