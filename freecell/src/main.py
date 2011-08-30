@@ -59,12 +59,12 @@ class Main:
       from view import View
       
       reports = [
-          {'name': 'Population Report',
-           'type': 'PopulationReport',
-           'description': 'Function plots for the 15 pairs with the highest mutual information.'},
-          {'name': 'Histogram Report',
-           'type': 'HistogramReport',
-           'description': '1D histograms for markers.'},
+#          {'name': 'Population Report',
+#           'type': 'PopulationReport',
+#           'description': 'Function plots for the 15 pairs with the highest mutual information.'},
+#          {'name': 'Histogram Report',
+#           'type': 'HistogramReport',
+#           'description': '1D histograms for markers.'},
           {'name': 'Chain',
            'type': 'Chain',
            'description': 'Create a custom chain.'}]

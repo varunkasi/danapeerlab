@@ -18,8 +18,10 @@ $(document).ready(function() {
     $("#{{ id }}_content").toggle(0, function(){$(window).resize();});
     if ($("#{{ id }}_content").is(':hidden')) {
       set_value("{{ widget_id }}", "shown", "hidden");
+      $("#{{ id }}_content div").trigger('hidden_by_expander')
     } else {
       set_value("{{ widget_id }}", "shown", "shown");
+      $("#{{ id }}_content div").trigger('shown_by_expander')
     }
     return false;
   });
