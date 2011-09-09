@@ -86,14 +86,15 @@ class MultiCompare(WidgetWithControlPanel):
     
   def dim_reduce_pca(self, tables, dims):
     if not dims:
-      return [0] * len(tables), [0] * len(tables)
+      return [0] * len(tables), [0] * len(tables), None
     average_vectors = np.array([t.get_average(*dims) for t in tables])
     print average_vectors.shape
     from mlabwrap import mlab
-    extra_points, mapping = mlab.compute_mapping(
-        average_vectors, 'PCA', 2, nout=2)
+    #extra_points, mapping = mlab.compute_mapping(
+    #    average_vectors, 'PCA', 2, nout=2)
+    coeffs, extra_points = mlab.princomp(average_vectors, nout=2)
     print extra_points.shape
-    return extra_points.T[0], extra_points.T[1]
+    return extra_points.T[0], extra_points.T[1], coeffs
     
   def dim_reduce_average(self, tables, dims):
     if not dims:
@@ -192,7 +193,10 @@ class MultiCompare(WidgetWithControlPanel):
         col_reduce1 = self.dim_reduce_average(tables, dims1)
         col_reduce2 = self.dim_reduce_average(tables, dims2)
       elif method == 'pca':
-        col_reduce1, col_reduce2 = self.dim_reduce_pca(tables, dims1)
+        col_reduce1, col_reduce2, coeffs = self.dim_reduce_pca(tables, dims1)
+        if coeffs != None:
+          comments.append(', '.join(['%s: %.2f' % (dims1[i], coeffs[0][i]) for i,dim in enumerate(dims1)]))
+          comments.append(', '.join(['%s: %.2f' % (dims1[i], coeffs[1][i]) for i,dim in enumerate(dims1)]))
       elif method == 'ks':
         col_reduce1, col_reduce2, eigen = self.dim_reduce_ks(tables, dims1)
         comments.append(','.join(['%.3f' % val for val in eigen[:4]]))

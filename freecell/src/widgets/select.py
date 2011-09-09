@@ -39,6 +39,11 @@ class Select(Widget):
     if not self.values.choices:
       return []
     return self.values.choices
+  
+  def get_choice(self):
+    if not self.values.choices:
+      return None
+    return self.values.choices[0]
     
   def guess_or_remember(self, key, default_value=None):
     return Widget._guess_or_remember(self, 'choices', key, default_value)

@@ -96,6 +96,7 @@ def get_markers(*groups):
 
 GROUP_TO_TEXT = [
     ('t-sne', 't-SNE Markers'),
+    ('debris', 'Debris Detection Markers'),
     ('signal', 'Signal Markers'),
     ('surface', 'Surface Markers')]
 
@@ -124,9 +125,9 @@ class Markers:
   sample_source	= register_marker(('sample_source',), 't-sne', False)
   Time	= register_marker(('Time',), 'technical', False)
   Cell_length = register_marker(('Cell Length', 'Cell_length'), 'technical', False)
-  DNA_191 = register_marker(('DNA-191', '191-DNA', 'DNA1'), 'signal_ignore')
-  DNA_193 = register_marker(('DNA-193', '193-DNA', 'DNA2'), 'signal_ignore')
-  Viability_103 = register_marker(('Viability', '103-Viability'), 'signal_ignore')
+  DNA_191 = register_marker(('DNA-191', '191-DNA', 'DNA1'), 'debris')
+  DNA_193 = register_marker(('DNA-193', '193-DNA', 'DNA2'), 'debris')
+  Viability_103 = register_marker(('Viability', '103-Viability'), 'debris')
   CD45_115 = register_marker(('CD45', '115-CD45'), 'surface')
   CD3_110 = register_marker(('CD3-110', '110-CD3'), 'surface_ignore')
   CD3_111 = register_marker(('CD3-111', '111-CD3'), 'surface_ignore')

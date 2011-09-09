@@ -54,13 +54,13 @@ class PopulationPicker(Widget):
     if 'combine' in self.widgets.combine_select.values.choices:
       ret['tables'] = [combine_tables(tables.values())]
       ret['tables'][0].name = self.summary
-      ret['view'] = 'loaded %d cells' % ret['tables'][0].num_cells
+      #ret['view'] = 'loaded %d cells' % ret['tables'][0].num_cells
     else:
       ret['tables'] = tables.values()
       logs = []
-      for key in tables:
-        logs.append('%s: loaded %d cells' % (str(key), tables[key].num_cells))
-      ret['view'] = '\n'.join(logs)        
+      #for key in tables:
+      #  logs.append('%s: loaded %d cells' % (str(key), tables[key].num_cells))
+      #ret['view'] = '\n'.join(logs)        
     return ret
 
   def get_data(self, count, arcsin_factor):

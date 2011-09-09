@@ -60,7 +60,7 @@ class ClusterModule(WidgetWithControlPanel):
     for table in tables:
       clusters = self.cluster(table)
       for i, cluster in enumerate(clusters):
-        clustersags = table.tags.copy()
+        cluster.tags = table.tags.copy()
         cluster.name = '%s %d %s' % (self.method_name(), i, table.name)
         ret.append(cluster)
       timer.complete_task(table.name)  

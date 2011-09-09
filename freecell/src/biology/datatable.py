@@ -375,20 +375,25 @@ class DataTable(AutoReloader):
     return DataTable(self.data[final], self.dims)
 
     
-  def windowed_medians(self, progression_dim, window_size=1000, overlap=500):   
+  def window_agg(self, progression_dim, window_size=1000, overlap=500, agg_method='median'):
+    """ Creates a sliding window that moves over the specified
+    dimension and aggregates all values per window
+    """
     window_size = int(window_size)
     overlap = int(overlap)
-    def cache(data):
-      # first sort by the given dim:
-      xdim_index = self.dims.index(progression_dim)
-      sorted_data = self.data[self.data[:,xdim_index].argsort(),]
-      # create windows:
-      from segmentaxis import segment_axis
-      seg_data = segment_axis(sorted_data, window_size, overlap, axis=0)
-      med_data = np.median(seg_data, axis=1)   
-      data.table = DataTable(med_data, self.dims)
-    data = services.cache((self, progression_dim, window_size, overlap), cache)
-    return data.table
+    # first sort by the given dim:
+    xdim_index = self.dims.index(progression_dim)
+    sorted_data = self.data[self.data[:,xdim_index].argsort(),]
+    # create windows:
+    from segmentaxis import segment_axis
+    seg_data = segment_axis(sorted_data, window_size, overlap, axis=0)
+    if agg_method == 'median':
+      agg_data = np.median(seg_data, axis=1)   
+    elif agg_method == 'average':
+      agg_data = np.average(seg_data, axis=1)   
+    else:
+      raise Exception('Unknown agg method')
+    return DataTable(agg_data, self.dims)
   
   def log_transform(self):
     data_copy = np.copy(self.data)      

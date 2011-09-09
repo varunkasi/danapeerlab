@@ -64,7 +64,7 @@ class LoadFcs(Widget):
       table = load_data_table(filepath, arcsin_factor=self.widgets.arcsin_factor.value_as_float())
       table.name = filename
       loaded_tables.append(table)
-      log_text.append('Loaeded %s: %d cells' % (filename, table.num_cells))
+      #log_text.append('Loaeded %s: %d cells' % (filename, table.num_cells))
     
     if not loaded_tables:
       raise Exception('No files were chosen')
