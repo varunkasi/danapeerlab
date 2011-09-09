@@ -3,6 +3,7 @@ import logging
 from odict import OrderedDict
 from widget import Widget
 import view
+from biology.datatable import DataTable
 from view import View
 from view import render
 from view import stack_lines
@@ -23,6 +24,7 @@ from loadfcs import LoadFcs
 from clustering import KMeansClusterer
 import plots
 from network import Network
+from slidingwindow import SlidingWindow
 from populationpicker import PopulationPicker
 
 """ A chain is a special widget that allows users to create interactive chains
@@ -99,11 +101,12 @@ run, the chain execution is stopped (as some outputs will probably be missing).
 CHAINABLE_WIDGETS = [
     ('FCS Loader', LoadFcs),
     ('Population Picker', PopulationPicker),
-    ('Histogram Plot', HistogramPlot),
-    ('Multi Compare', MultiCompare),
-    ('Kmeans', KMeansClusterer),
     ('Density Plot', plots.DensityPlot),
     ('Scatter Plot', plots.ScatterPlot),
+    ('Histogram Plot', HistogramPlot),
+    ('Multi Compare', MultiCompare),
+    ('Sliding Window', SlidingWindow),
+    ('Kmeans', KMeansClusterer),
     ('True Scatter Plot', plots.TrueScatterPlot),
     ('Function Plot', plots.FunctionPlot),
     ('Scatter Gater', plots.ScatterGater),
@@ -364,6 +367,23 @@ class Chain(Widget):
       ret.append((code, name))
     return ret
   
+  def output_log(self, widget_data):
+    if not widget_data:
+      return ''
+    def log_tables(tables):
+      texts = []
+      for table in tables:
+        texts.append('Table %s: %d cells' % (table.name, table.num_cells))
+      return '\n'.join(texts)
+    ret = []
+    for key,val in widget_data.iteritems():
+      if not val or not type(val[0]) == DataTable:
+        continue
+      if key != 'tables':
+        ret.append(key)
+      ret.append(log_tables(val))
+    return '\n'.join(ret)
+    
   def view(self):
     global CHAINABLE_WIDGETS
     # Run the chain:
@@ -380,6 +400,7 @@ class Chain(Widget):
         with Timer('Module %d run' % (i+1)):
           widget_data = widget.run(data)
         data.append(widget_data)
+        views.append(self.output_log(widget_data))
         if widget_data and 'view' in widget_data:
           views.append(widget_data['view'])
           del widget_data['view']

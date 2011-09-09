@@ -2,10 +2,12 @@
 import sys
 
 class MultiTimer(object):
-  def __init__(self, num_tasks):
+  def __init__(self, num_tasks, update_every=1):
     self.num_tasks = num_tasks
+    self.update_every = update_every
     
     self.task_times = []
+    self.completed = 0
 
     self.prog_bar = '[]'
     self.fill_char = '#'
@@ -20,20 +22,19 @@ class MultiTimer(object):
   
   def complete_task(self, message=''):
     self.task_times.append(self.timer())
-    self.__update_bar(message)
-    sys.stdout.write('\r')
-    #if sys.platform.lower().startswith('win'):
-    #  sys.stdout.write('\r')
-    #else:
-    #  sys.stdout.write('\n')
-    #sys.stdout.write(chr(27) + '[A')
-    sys.stdout.write(self.prog_bar)
-    sys.stdout.flush()
-    if len(self.task_times) == self.num_tasks:
+    if len(self.task_times) > 5:
+      self.task_times = self.task_times[-5:]
+    self.completed += 1
+    if self.completed % self.update_every == 0:
+      self.__update_bar(message)
+      sys.stdout.write('\r')
+      sys.stdout.write(self.prog_bar)
+      sys.stdout.flush()
+    if self.completed == self.num_tasks:
       sys.stdout.write('\n')
   
   def __update_bar(self, message):
-    percent_done = int(round(len(self.task_times) / float(self.num_tasks) * 100.0))
+    percent_done = int(round(self.completed / float(self.num_tasks) * 100.0))
     all_full = self.width - 2
     num_hashes = int(round((percent_done / 100.0) * all_full))
     self.prog_bar = '[' + self.fill_char * num_hashes + ' ' * (all_full - num_hashes) + ']'
@@ -42,7 +43,7 @@ class MultiTimer(object):
     self.prog_bar = self.prog_bar[0:pct_place] + \
         (pct_string + self.prog_bar[pct_place + len(pct_string):])
     
-    tasks_done = len(self.task_times)
+    tasks_done = self.completed
     tot_time = self.task_times[-1] - self.start
     if tasks_done == 1:
       last_time = tot_time

@@ -60,6 +60,9 @@ def is_number(s):
     return False    
 
 class DataIndex(object):
+  """Holds an index of fcs files. Users can query the index
+  and get all the datatable that match the query.
+  """
   def __init__(self, entries, path): 
     self.entries = entries
     self.path = path

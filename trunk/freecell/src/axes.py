@@ -5,6 +5,7 @@ axes objects
 
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.interpolate
 from matplotlib.figure import Figure
 from scriptservices import services 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -26,7 +27,10 @@ class Colorer(object):
       self.next_color %= len(self.COLOR_LIST)
     return self.assigned_colors[key]
     
-  
+def ax_size_pixels(ax):  
+  fig_width, fig_height = ax.figure.get_size_inches()
+  pos = ax.get_position()
+  return pos.width * fig_width * DPI, pos.height * fig_height * DPI
 
 def new_axes(x_size=256, y_size=256):
   """ Create a new axes object with the specified size in pixels
@@ -54,7 +58,7 @@ def points(ax, datatable, markers):
   
   
 def histogram_scatter(ax, datatable, markers, range=None, color_marker=None,
-    min_cells_per_bin=1,no_bins=256j):
+    min_cells_per_bin=1, no_bins_x=256j, no_bins_y=256j, interpolation='nearest'):
   """ Draws a 2d histogram of the given markers in the given range.
   If a bin has more than min_cells_per_bin, than it is colored black.
   This gives the same effect as a scatter plot. 
@@ -71,8 +75,8 @@ def histogram_scatter(ax, datatable, markers, range=None, color_marker=None,
       cols[0], 
       cols[1], 
       [
-          np.r_[fixed_range[0]:fixed_range[2]:no_bins], 
-          np.r_[fixed_range[1]:fixed_range[3]:no_bins]])
+          np.r_[fixed_range[0]:fixed_range[2]:no_bins_x], 
+          np.r_[fixed_range[1]:fixed_range[3]:no_bins_y]])
   final_hist = np.sign(np.subtract(
       np.clip(np.abs(hist), min_cells_per_bin, np.inf),
       min_cells_per_bin))
@@ -83,8 +87,8 @@ def histogram_scatter(ax, datatable, markers, range=None, color_marker=None,
         cols[0], 
         cols[1], 
         [
-            np.r_[fixed_range[0]:fixed_range[2]:no_bins], 
-            np.r_[fixed_range[1]:fixed_range[3]:no_bins]], None, False, weights)
+            np.r_[fixed_range[0]:fixed_range[2]:no_bins_x], 
+            np.r_[fixed_range[1]:fixed_range[3]:no_bins_y]], None, False, weights)
     averages = np.true_divide(weighted_hist, hist)
     averages[np.isnan(averages)] = np.NaN
     averages[final_hist == 0] = np.NaN
@@ -103,7 +107,9 @@ def histogram_scatter(ax, datatable, markers, range=None, color_marker=None,
         x_edges[-1],
         y_edges[0],
         y_edges[-1]]
-  image = ax.imshow(data_to_draw.T, extent=extent, cmap=cmap, origin='lower')
+
+  image = ax.imshow(data_to_draw.T, extent=extent, cmap=cmap, origin='lower', interpolation=interpolation)
+  
   ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
   ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
   ax.figure.subplots_adjust(bottom=0.15)
@@ -113,7 +119,7 @@ def histogram_scatter(ax, datatable, markers, range=None, color_marker=None,
     #label = cbar.get_label()
     #label.set_fontsize('xx-small')
   ax.set_aspect('auto')
-  return ax
+  return hist.T, extent
 
 def remove_ticks(ax):
   plt.setp(
@@ -202,47 +208,45 @@ def kde2d(
 
 def kde2d_data(
     datatable, markers, range=None, norm_axis=None, norm_axis_thresh = None, res=256):
-  def cached(data):
-    from mlabwrap import mlab
-    a, w = datatable.get_cols(markers[0], markers[1])
-    if range:     
-      min_a = range[0]
-      max_a = range[2]
-      min_w = range[1]
-      max_w = range[3]
-    else:
-      min_w = min(w)
-      max_w = max(w)
-      min_a = min(a)
-      max_a = max(a)
-    points = datatable.get_points(markers[0], markers[1])
-    bandwidth,data.density, data.X, data.Y = mlab.kde2d(
-        points, float(res),        
-        [[float(min_a), float(min_w)]],
-        [[float(max_a), float(max_w)]],
-        nout=4)
-  data = services.cache((datatable, markers, range), cached)
-  display_data = data.density
+  from mlabwrap import mlab
+  a, w = datatable.get_cols(markers[0], markers[1])
+  if range:     
+    min_a = range[0]
+    max_a = range[2]
+    min_w = range[1]
+    max_w = range[3]
+  else:
+    min_w = min(w)
+    max_w = max(w)
+    min_a = min(a)
+    max_a = max(a)
+  points = datatable.get_points(markers[0], markers[1])
+  bandwidth, density, X, Y = mlab.kde2d(
+      points, float(res),        
+      [[float(min_a), float(min_w)]],
+      [[float(max_a), float(max_w)]],
+      nout=4)
+  display_data = density
   if norm_axis == 'x':
-    max_dens_x = np.array([np.max(data.density, axis=1)]).T
+    max_dens_x = np.array([np.max(density, axis=1)]).T
     if norm_axis_thresh:
       max_dens_x[max_dens_x < norm_axis_thresh] = np.inf
-    data.density_x = data.density / max_dens_x
-    display_data = data.density_x
+    density_x = density / max_dens_x
+    display_data = density_x
   elif norm_axis == 'y':
-    max_dens_y = np.array([np.max(data.density, axis=0)])
+    max_dens_y = np.array([np.max(density, axis=0)])
     if norm_axis_thresh:
       max_dens_y[max_dens_y < norm_axis_thresh] = np.inf
-    data.density_y = data.density / max_dens_y
-    display_data = data.density_y
+    density_y = density / max_dens_y
+    display_data = density_y
   extent=[
-      data.X[0,0],
-      data.X[0,-1],
-      data.Y[0,0],
-      data.Y[-1,0]]    
-  return display_data, extent, data.density, data.X, data.Y
+      X[0,0],
+      X[0,-1],
+      Y[0,0],
+      Y[-1,0]]    
+  return display_data, extent, density, X, Y
 
-######### Everything above this is probably deprecated #########
+######### Everything below this is probably deprecated #########
 def scatter_data(datatable, markers, range=None, norm_axis=None, norm_axis_thresh=0, no_bins=512j):
   cols = datatable.get_cols(*markers)
   if not range:
@@ -298,4 +302,16 @@ def kde1d_points(ax, points, min_x=None, max_x=None, norm=1):
   density = np.multiply(density, float(norm))
   ax.plot(xmesh, density)
   return ax
+
+#  RectBivariateSpline
+#######################
+#  lines = []
+#  inter = scipy.interpolate.RectBivariateSpline((x_edges[1:] + x_edges[:-1]) / 2, (y_edges[1:] + y_edges[:-1]) / 2, hist, )
+#  num_ys = y_edges.shape[0]
+#  for x_val in x_edges:
+#    lines.append(inter.ev([x_val]*num_ys, y_edges))
+#  smooth_hist = np.array(lines)
+
 ######### End of this is probably deprecated #########
+
+

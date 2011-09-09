@@ -52,8 +52,14 @@ def get_num_events(filename):
 
     #from pprint import pprint; pprint(fcs_var_list)
     if data_start == 0 and data_end == 0:
-        data_start = int(fcs_vars['$DATASTART'])
-        data_end = int(fcs_vars['$DATAEND'])
+        data_start_key = '$DATASTART'
+        data_end_key ='$DATAEND'
+        if not data_start_key in fcs_vars:
+          data_start_key = '$BEGINDATA'
+        if not data_end_key in fcs_vars:
+          data_end_key = '$ENDDATA'
+        data_start = int(fcs_vars[data_start_key])
+        data_end = int(fcs_vars[data_end_key])
 
     num_dims = int(fcs_vars['$PAR'])
     #logging.info("Number of dimensions:%d" % num_dims)
@@ -99,8 +105,14 @@ def fcsextract(filename):
 
     #from pprint import pprint; pprint(fcs_var_list)
     if data_start == 0 and data_end == 0:
-        data_start = int(fcs_vars['$DATASTART'])
-        data_end = int(fcs_vars['$DATAEND'])
+        data_start_key = '$DATASTART'
+        data_end_key ='$DATAEND'
+        if not data_start_key in fcs_vars:
+          data_start_key = '$BEGINDATA'
+        if not data_end_key in fcs_vars:
+          data_end_key = '$ENDDATA'
+        data_start = int(fcs_vars[data_start_key])
+        data_end = int(fcs_vars[data_end_key])
 
     num_dims = int(fcs_vars['$PAR'])
     #logging.info("Number of dimensions:%d" % num_dims)
@@ -108,10 +120,10 @@ def fcsextract(filename):
     num_events = int(fcs_vars['$TOT'])
     #logging.info("Number of events:%d" % num_events)
 
-    # Read DATA portion
-    fcs.seek(data_start)
+    # Don't Read DATA portion, we'll do it with numpy
+    #fcs.seek(data_start)
     #print "# of Data bytes",data_end-data_start+1
-    data = fcs.read(data_end-data_start+1)
+    #data = fcs.read(data_end-data_start+1)
 
   #Determine data format
   #for key in fcs_vars.keys():
@@ -165,8 +177,14 @@ def fcsextract(filename):
     else:
         assert False,"Error: This script can only read data encoded with $BYTEORD = 1,2,3,4 or 4,3,2,1"
 
-  # Put data in StringIO so we can read bytes like a file    
-  data = StringIO(data)
+
+  # Load data with numpy.
+  dt = np.dtype(('%s%s' % (endian, datatype, ), num_dims))
+  data_file = open(fcs_file_name,'rb')
+  with data_file:
+    data_file.seek(data_start)
+    events = np.fromfile(data_file, dt, num_events)
+  return fcs_vars,events,is_peng
 
   #logging.info("Parsing DATA segment")
   # Create format string based on endianeness and the specified data type
@@ -176,9 +194,13 @@ def fcsextract(filename):
   #logging.info("Data size:%d" % datasize)
   events = []
   # Read and unpack all the events from the data
+  #print num_events
+  from multitimer import MultiTimer
+  timer = MultiTimer(num_events, 100)
   for e in range(num_events):
       event = struct.unpack(format,data.read(datasize))
       events.append(event)
+      timer.complete_task()
   return fcs_vars,events,is_peng
 
 load_data_table_CACHE = {}
@@ -188,7 +210,7 @@ def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[], ar
     raise Exception('No filename was provided to load_data_table')
   if not (filename, arcsin_factor)  in load_data_table_CACHE:
     fcs_vars, events, is_peng = fcsextract(filename)
-    if not events:
+    if not events.shape:
       logging.error('File %s is empty' % filename)
       return None
     num_dims = len(events[0])
@@ -209,7 +231,7 @@ def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[], ar
     #print fcs_vars
     dims = [marker_from_name(name) for name in dim_names]
     dim_names = [str(dim) for dim in dims]
-    data = array(events)
+    data = events
     indices_to_transform = [i for i,n in enumerate(dims) if n and n.needs_transform]
     #data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform] / 5)
     data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform] * arcsin_factor)
