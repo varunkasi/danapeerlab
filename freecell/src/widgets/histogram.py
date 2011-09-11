@@ -146,6 +146,7 @@ class HistogramPlot(Widget):
     main_views = []
     shift = self.widgets.shift.value_as_float()
     plots_for_legend = OrderedDict()
+    colorer = axes.Colorer()
     # Check that the user has already chosen dimensions. Otherwise, ask him 
     # to do so.
     if self.widgets.dims.values.choices:
@@ -159,7 +160,6 @@ class HistogramPlot(Widget):
           
           # Draw the histogram for every input
           plots = []
-          colorer = axes.Colorer()
           sorted_tables = tables
           sort_method = self.widgets.sort_inside.values.choices[0]
           if sort_method == 'unsort':

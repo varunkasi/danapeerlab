@@ -81,7 +81,6 @@ def histogram_scatter(ax, datatable, markers, range=None, color_marker=None,
       np.clip(np.abs(hist), min_cells_per_bin, np.inf),
       min_cells_per_bin))
   if color_marker:
-    is_colored = True
     weights = datatable.get_cols(color_marker)[0]     
     weighted_hist, x_edges, y_edges = np.histogram2d(
         cols[0], 
@@ -93,10 +92,6 @@ def histogram_scatter(ax, datatable, markers, range=None, color_marker=None,
     averages[np.isnan(averages)] = np.NaN
     averages[final_hist == 0] = np.NaN
     colored_hist = averages
-  else:
-    is_colored = False
-
-  if is_colored:
     data_to_draw = colored_hist
     cmap = cm.jet
   else:
@@ -116,6 +111,10 @@ def histogram_scatter(ax, datatable, markers, range=None, color_marker=None,
   cbar = ax.figure.colorbar(image)
   if color_marker:
     cbar.set_label(color_marker, fontsize='xx-small')
+    vals, legend = datatable.get_legend(color_marker)
+    if legend:
+      cbar.set_ticks(vals)
+      cbar.ax.set_yticklabels(legend)
     #label = cbar.get_label()
     #label.set_fontsize('xx-small')
   ax.set_aspect('auto')
@@ -152,15 +151,20 @@ def kde2d_color_hist(
     tl.set_visible(False)
   for tl in ax_hist_y.get_xticklines():
     tl.set_visible(False)
-  density, X, Y = kde2d(
-      ax_main, datatable, markers, range, norm_axis, norm_axis_thresh, res)
+
+  ax_main.set_xlabel(str(markers[0]) + '   ', size='small')
+  ax_main.set_ylabel(str(markers[1]) + '   ', size='small')
+  ax_main.figure.subplots_adjust(bottom=0.15)
+
+  try:
+    density, X, Y = kde2d(
+        ax_main, datatable, markers, range, norm_axis, norm_axis_thresh, res)
+  except: 
+    return
   x_hist, x_top_edges = np.histogram(datatable.get_cols(markers[0]), bins=X[0])
   image = ax_hist_x.imshow(np.log([x_hist]), extent=(X[0,0], X[0,-1], 0, 1), cmap=cm.jet, origin='lower')
   y_hist, y_top_edges = np.histogram(datatable.get_cols(markers[1]), bins=Y[:,0])
   image = ax_hist_y.imshow(np.log([y_hist]).T, extent=(0,1,Y[0,0], Y[-1,0]), cmap=cm.jet, origin='lower')
-  ax_main.set_xlabel(str(markers[0]) + '   ', size='small')
-  ax_main.set_ylabel(str(markers[1]) + '   ', size='small')
-  ax_main.figure.subplots_adjust(bottom=0.15)
 
   #for i in xrange(len(X[0])):
   #  print X[0,i], top_edges[i]

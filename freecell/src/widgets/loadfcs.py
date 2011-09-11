@@ -61,7 +61,7 @@ class LoadFcs(Widget):
     log_text = []
     for filename in self.widgets.fcs_files.values.choices:
       filepath = os.path.join(dirname, filename)
-      table = load_data_table(filepath, arcsin_factor=self.widgets.arcsin_factor.value_as_float())
+      table = load_data_table(filepath, arcsin_factor=1./self.widgets.arcsin_factor.value_as_float())
       table.name = filename
       loaded_tables.append(table)
       #log_text.append('Loaeded %s: %d cells' % (filename, table.num_cells))
@@ -99,12 +99,12 @@ class LoadFcs(Widget):
 
     self.widgets.fcs_files.guess_or_remember(('load_fcs fcs_files', files, dirname), [])
     self.widgets.combine_select.guess_or_remember(('load_fcs combine_select', dirname), ['combine'])
-    self.widgets.arcsin_factor.guess_or_remember(('load_fcs arcsin_factor', dirname), 1)
+    self.widgets.arcsin_factor.guess_or_remember(('load_fcs arcsin_factor', dirname), 5)
 
     # display the control panel:
     return stack_lines(
         self.widgets.fcs_dir.view('FCS Directory', self.widgets.apply, numeric_validation=False, size=100),
         self.widgets.fcs_files.view('FCS Files', self.widgets.apply, files),
         self.widgets.combine_select.view('Combine files', self.widgets.apply, [('combine', 'Combine files into one table'), ('seperate', 'Seperate to a table list')], multiple=False),
-        self.widgets.arcsin_factor.view('Arcsinh Factor', self.widgets.apply, numeric_validation=True, comment='Transformation: arcsinh(value * factor)'),
+        self.widgets.arcsin_factor.view('Arcsinh Factor', self.widgets.apply, numeric_validation=True, comment='Transformation: arcsinh(value / factor)'),
         self.widgets.apply.view())

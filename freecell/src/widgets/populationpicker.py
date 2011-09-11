@@ -50,7 +50,9 @@ class PopulationPicker(Widget):
 
   def run(self):
     ret = {}
-    tables = self.get_data(count=False, arcsin_factor=self.widgets.arcsin_factor.value_as_float())
+    if not self.experiment:
+      raise Exception('No data was loaded, pick an experiment first.')
+    tables = self.get_data(count=False, arcsin_factor=1./self.widgets.arcsin_factor.value_as_float())
     if 'combine' in self.widgets.combine_select.values.choices:
       ret['tables'] = [combine_tables(tables.values())]
       ret['tables'][0].name = self.summary
@@ -129,7 +131,7 @@ class PopulationPicker(Widget):
       w.guess_or_remember((w.tag, w.vals, self.__class__.__name__), [])
     
     self.widgets.combine_select.guess_or_remember(('populationpicker combine_select', self.experiment), ['combine'])
-    self.widgets.arcsin_factor.guess_or_remember(('populationpicker arcsin_factor', self.experiment), 1)
+    self.widgets.arcsin_factor.guess_or_remember(('populationpicker arcsin_factor', self.experiment), 5)
     
     #if not self.widgets.arcsin_factor.values.value:
     #  self.widgets.arcsin_factor.values.value = '1'
@@ -142,7 +144,7 @@ class PopulationPicker(Widget):
             'Experiment', self.widgets.apply, experiments, False),
         stacked_views,
         self.widgets.combine_select.view('Combine files', self.widgets.apply, [('combine', 'Combine items into one table'), ('seperate', 'Seperate to one table per parameter combination')], multiple=False),
-        self.widgets.arcsin_factor.view('Arcsinh Factor', self.widgets.apply, numeric_validation=True, comment='Transformation: arcsinh(value * factor)'),
+        self.widgets.arcsin_factor.view('Arcsinh Factor', self.widgets.apply, numeric_validation=True, comment='Transformation: arcsinh(value / factor)'),
         View(None, '<p style="clear: both"></p>'),
         self.widgets.apply.view())
     if not enable_expander:
