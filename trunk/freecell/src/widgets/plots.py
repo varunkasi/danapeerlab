@@ -27,6 +27,7 @@ from areaselect import AreaSelect
 from odict import OrderedDict
 from table import Table
 from cache import cache
+from multitimer import MultiTimer
 
     
 class AbstractPlot(Widget):
@@ -67,6 +68,7 @@ class AbstractPlot(Widget):
   @cache('plots')
   def _draw_figures(self, table, dim_x_arr, dim_y_arr, table_for_range, min_val):
     ret = OrderedDict()
+    multi_timer = MultiTimer(len(dim_x_arr) * len(dim_y_arr))
     for dim_x in dim_x_arr:
       for dim_y in dim_y_arr:
         fixed_table = table.gate(DimRange(dim_x, min_val, np.inf), DimRange(dim_y, min_val, np.inf))
@@ -75,6 +77,7 @@ class AbstractPlot(Widget):
         figures = self.draw_figures(fixed_table, dim_x, dim_y, range)
         for key, val in figures.iteritems():
           ret['%s_%s_%s' % (dim_x, dim_y, key)] = val
+        multi_timer.complete_task('%s %s' % (dim_x, dim_y))
     return ret
           
   def _dims_ready(self, table=None):
@@ -246,8 +249,10 @@ class AbstractPlot(Widget):
     try:
       id_to_fig = []
       with Timer('draw figures'):
+        multi_timer = MultiTimer(len(tables_to_show))
         for table_input in tables_to_show:
           id_to_fig.append(self._draw_figures(table_input, dim_x, dim_y, tables[0], min_val))
+          multi_timer.complete_task(table_input.name)
       if self.enable_gating:
         assert len(id_to_fig[0]) == 1
         fig = id_to_fig[0].values()[0]

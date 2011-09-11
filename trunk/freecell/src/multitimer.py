@@ -2,7 +2,8 @@
 import sys
 
 class MultiTimer(object):
-  def __init__(self, num_tasks, update_every=1):
+  def __init__(self, num_tasks, update_every=1, wait_before_print_sec=3):
+    self.wait_before_print_sec = wait_before_print_sec
     self.num_tasks = num_tasks
     self.update_every = update_every
     
@@ -25,13 +26,16 @@ class MultiTimer(object):
     if len(self.task_times) > 5:
       self.task_times = self.task_times[-5:]
     self.completed += 1
-    if self.completed % self.update_every == 0:
+    if self.completed % self.update_every == 0 and self.time_elapsed() > self.wait_before_print_sec:
       self.__update_bar(message)
       sys.stdout.write('\r')
       sys.stdout.write(self.prog_bar)
       sys.stdout.flush()
-    if self.completed == self.num_tasks:
+    if self.completed == self.num_tasks and self.time_elapsed() > self.wait_before_print_sec:
       sys.stdout.write('\n')
+  
+  def time_elapsed(self):
+    return self.timer() - self.start
   
   def __update_bar(self, message):
     percent_done = int(round(self.completed / float(self.num_tasks) * 100.0))

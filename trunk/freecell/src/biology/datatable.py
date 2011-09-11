@@ -59,7 +59,7 @@ def tables_mean(tables, p=1):
   new_data = np.sum([t.data ** p for t in tables], axis=0)
   new_data = new_data / float(len(tables))
   new_data = new_data ** (1./p)
-  return DataTable(new_data, tables[0].dims)
+  return DataTable(new_data, tables[0].dims, tables[0].legends, tables[0].tags)
   
 
 def distance_table(tables, distance_func):
@@ -104,7 +104,7 @@ class DataTable(AutoReloader):
   """
   
   
-  def __init__(self, data, dims, legends=None, name='', tags=None):
+  def __init__(self, data, dims, legends=None, tags={}, name=None):
     """Creates a new data table. This class is immuteable.
     
     data -- a 2 dimension array with the table data
@@ -116,11 +116,16 @@ class DataTable(AutoReloader):
     """
     self.data = data
     self.dims = dims
-    self.legends = legends
+    
+    if legends == None:
+      self.legends = [None] * len(self.dims)
+    else:
+      self.legends = legends[:]
     self.num_cells = float(data.shape[0])
-    if not tags:
-      self.tags = {}
-    if not name in self.tags:
+    if type(tags) == str:
+      raise Exception('tags must be dict')
+    self.tags = tags.copy()
+    if name != None:
       self.tags['name'] = name
 
   def __hash__(self):
@@ -135,6 +140,16 @@ class DataTable(AutoReloader):
   
   def get_name(self):
     return self.tags['name']
+  
+  def get_legend(self, dim):
+    legend =  self.legends[self.dims.index(dim)]
+    if not legend:
+      return None, None 
+    vals = np.unique(self.get_cols(dim)[0])
+    ret = []
+    for val in vals:
+      ret.append(legend[val])
+    return vals, ret
   
   def get_tags(self, keys):
     if type(keys) in (str, unicode):
@@ -177,6 +192,7 @@ class DataTable(AutoReloader):
           new_data,
           self.dims,
           self.legends,
+          self.tags,
           self.sub_name('%.2f<=%s<%.2f' % (bins[i-1], dim, bins[i]))))
     return splitted
 
@@ -225,6 +241,7 @@ class DataTable(AutoReloader):
         self.data[idx==(i+1)],
         self.dims,
         self.legends,
+        self.tags,
         self.sub_name('emgm cluster %d' % i)) for i in xrange(k)]
     for t in tables:
       t.tags['original_table'] = self
@@ -248,6 +265,7 @@ class DataTable(AutoReloader):
         self.data[idx==(i+1)],
         self.dims,
         self.legends,
+        self.tags,
         self.sub_name('kmeans cluster %d' % i)) for i in xrange(k)]
     #for t in tables:
     #  t.properties['original_table'] = self
@@ -309,7 +327,7 @@ class DataTable(AutoReloader):
 
     keys = s.keys()
     vals = np.array([s.values()])
-    ret = DataTable(vals, keys, None, self.sub_name('stats for %s' % dim))
+    ret = DataTable(vals, keys, name=self.sub_name('stats for %s' % dim))
     ret.properties['original_table'] = self
     return ret
     
@@ -334,7 +352,7 @@ class DataTable(AutoReloader):
     return self.data[:,indices]    
   
   def get_subtable(self, rows):
-    return DataTable(self.data[rows,:], self.dims)  
+    return DataTable(self.data[rows,:], self.dims, self.legends, self.tags.copy())  
   
   def gate2(self, *dim_ranges):
     """ Gating using kd-tree, deprecated do not use
@@ -360,7 +378,7 @@ class DataTable(AutoReloader):
     test1 = np.alltrue(relevant_data >= mins, axis=1)
     test2 = np.alltrue(relevant_data <= maxes, axis=1)
     final = np.logical_and(test1, test2)   
-    return DataTable(self.data[final], self.dims)
+    return DataTable(self.data[final], self.dims, self.legends, self.tags.copy())
 
   def gate_out(self, *dim_ranges):
     """ Returns all the cells outside the given gate. 
@@ -372,7 +390,7 @@ class DataTable(AutoReloader):
     test1 = np.any(relevant_data < mins, axis=1)
     test2 = np.any(relevant_data > maxes, axis=1)
     final = np.logical_or(test1, test2)   
-    return DataTable(self.data[final], self.dims)
+    return DataTable(self.data[final], self.dims, self.legends, self.tags.copy())
 
     
   def window_agg(self, progression_dim, window_size=1000, overlap=500, agg_method='median'):
@@ -393,18 +411,18 @@ class DataTable(AutoReloader):
       agg_data = np.average(seg_data, axis=1)   
     else:
       raise Exception('Unknown agg method')
-    return DataTable(agg_data, self.dims)
+    return DataTable(agg_data, self.dims, self.legends, self.tags.copy())
   
   def log_transform(self):
     data_copy = np.copy(self.data)      
     data_copy = np.log(data_copy)
-    table = DataTable(data_copy, self.dims)
+    table = DataTable(data_copy, self.dims, self.legends, self.tags.copy())
     return table
 
   def arcsinh_transform(self, factor=0.2):
     data_copy = np.copy(self.data)      
     data_copy = np.arcsinh(data_copy * factor)
-    table = DataTable(data_copy, self.dims)   
+    table = DataTable(data_copy, self.dims, self.legends, self.tags.copy())   
     return table
     
   def add_reduced_dims(self, method, no_dims, dims_to_use=None, *args, **kargs):
@@ -430,7 +448,7 @@ class DataTable(AutoReloader):
     new_data = np.concatenate((old_data, extra_points), axis=1)
     extra_dims = ['%s%d' % (method, i) for i in xrange(no_dims)]
     new_dims = self.dims + extra_dims
-    return DataTable(new_data, new_dims)
+    return DataTable(new_data, new_dims, self.legends, self.tags.copy())
     
   def remove_bad_cells(self, *dims):
     """ Removes rows which have negative values for the specified dims.
@@ -445,7 +463,7 @@ class DataTable(AutoReloader):
     in the same sample.
     """
     indices = random.sample(xrange(np.shape(self.data)[0]), n)
-    table = DataTable(self.data[indices], self.dims)
+    table = DataTable(self.data[indices], self.dims, self.legends, self.tags.copy())
     return table
   
   @cache('mutual_information_tables')
