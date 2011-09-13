@@ -80,6 +80,12 @@ class Widget(object):
       raise Exception('name %s not found.' % name)
     return self.widgets[name]
       
+  def _add_widget_if_needed(self, name, new_widget_type, *args, **kargs):
+    name = self._normalize_id(name)
+    if not name in self.widgets:
+      return self._add_widget(name, new_widget_type, *args, **kargs)
+    return self.widgets[name]
+    
   def _add_widget(self, name, new_widget_type, *args, **kargs):
     """ Adds a sub widget. """
     name = self._normalize_id(name)
