@@ -31,15 +31,13 @@ class ClusterModule(WidgetWithControlPanel):
   """
   def __init__(self, id, parent):
     WidgetWithControlPanel.__init__(self, id, parent)
-    self._add_widget('cluster_dims', Select)
-    self._add_widget('apply', ApplyButton)
-  
     
   def title(self, short):
     """Title for the module, the short version is displayed in menus, 
     the long version is displayed in the expander title.
     """
-    
+    if not 'cluster_dims' in self.widgets:
+      return 'Clustering module'
     return '%s over %s' % (self.method_name(), self.widgets.cluster_dims.get_choices()) 
       
   def get_inputs(self):
@@ -67,13 +65,14 @@ class ClusterModule(WidgetWithControlPanel):
     return {'tables':ret}
     
   def control_panel(self, tables):
-    self.widgets.cluster_dims.guess_or_remember(('cluster dims', tables), [])
-    # Create the control panel view. This will enable users to choose the dimensions. 
-    control_panel_view = stack_lines(
-        self.widgets.cluster_dims.view('Clustering dimensions', self.widgets.apply, options_from_table(tables[0])),
-        self._control_panel(tables),
-        self.widgets.apply.view())
-    return control_panel_view
+    self._add_select(
+        'cluster_dims',
+        'Clustering Dimensions',
+        options=options_from_table(tables[0]), 
+        is_multiple=True, 
+        cache_key=tables, 
+        default=[])
+    return self._control_panel(tables)
   
   def get_cluster_dims(self):
     return self.widgets.cluster_dims.get_choices()
@@ -87,8 +86,11 @@ class ClusterModuleWithNumClusters(ClusterModule):
     self._add_widget('num_clusters', Input)
   
   def _control_panel(self, tables):
-    self.widgets.num_clusters.guess_or_remember(('cluster num', tables), '5')
-    return self.widgets.num_clusters.view('Number of clusters', self.widgets.apply)
+    self._add_input(
+        'num_clusters',
+        'Number of Clusters',
+        cache_key=tables,
+        default=4)
     
   def get_num_clusters(self):
     return int(self.widgets.num_clusters.value_as_float())

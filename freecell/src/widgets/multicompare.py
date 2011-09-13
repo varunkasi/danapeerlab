@@ -29,17 +29,8 @@ class MultiCompare(WidgetWithControlPanel):
   """
   def __init__(self, id, parent):
     WidgetWithControlPanel.__init__(self, id, parent)
-    self._add_widget('average_dims', Select)
-    self._add_widget('std_dims', Select)
-    self._add_widget('scroll_tags', Select)
-    self._add_widget('id_tags', Select)
-    self._add_widget('reduce_dims1', Select)
-    self._add_widget('reduce_dims2', Select)
-    self._add_widget('reduce_method', Select)
-    self._add_widget('apply', ApplyButton)
     self._add_widget('motion_chart', MotionChart)
   
-    
   def title(self, short):
     """Title for the module, the short version is displayed in menus, 
     the long version is displayed in the expander title.
@@ -106,7 +97,11 @@ class MultiCompare(WidgetWithControlPanel):
     if not dims:
       return [0] * len(tables), [0] * len(tables)
     # get distances
-    distances = [datatable.ks_distances(tables, dim) for dim in dims]
+    distances = []
+    multi_timer = MultiTimer(len(dims))
+    for dim in dims:
+      distances.append(datatable.ks_distances(tables, dim))
+      multi_timer.complete_task()
     # average
     mean_distances = datatable.tables_mean(distances, p=3)
     from mlabwrap import mlab
@@ -115,30 +110,66 @@ class MultiCompare(WidgetWithControlPanel):
   
   def control_panel(self, tables):
     self.widgets.motion_chart.guess_or_remember(('multicompare motionchart', tables), None)
-    self.widgets.average_dims.guess_or_remember(('multicompare average dims', tables), tables[0].dims)
-    self.widgets.std_dims.guess_or_remember(('multicompare std dims', tables), [])
-    self.widgets.reduce_dims1.guess_or_remember(('multicompare reduce dims', tables), [])
-    self.widgets.reduce_dims2.guess_or_remember(('multicompare reduce dims2', tables), [])
-    # always revert to pca:
-    #self.widgets.reduce_method.guess_or_remember(('multicompare reduce method', tables), ['pca'])
-    if not self.widgets.reduce_method.values.choices:
-      self.widgets.reduce_method.values.choices = ['pca']
-    self.widgets.scroll_tags.guess_or_remember(('multicompare scroll', tables), [])
-    self.widgets.id_tags.guess_or_remember(('multicompare id', tables), ['name'])
-    # Create the control panel view. This will enable users to choose the dimensions. 
-    control_panel_view = stack_lines(
-        self.widgets.reduce_method.view('Dimensionality reduction method', self.widgets.apply,
-            [('pca', 'PCA over averaged reduce_dimensions1'),
-             ('ks', 'Distances are ks-score between histogram of reduce_dimensions1'),
-             ('average', 'Averages over reduce dimensions 1 and 2)')], multiple=False),
-        self.widgets.reduce_dims1.view('Dimensionality reduction dims 1', self.widgets.apply, options_from_table(tables[0])),    
-        self.widgets.reduce_dims2.view('Dimensionality reduction dims 2', self.widgets.apply, options_from_table(tables[0])),    
-        self.widgets.average_dims.view('Calculate average for', self.widgets.apply, options_from_table(tables[0])),
-        self.widgets.std_dims.view('Calculate std for', self.widgets.apply, options_from_table(tables[0])),
-        self.widgets.id_tags.view('Id tags', self.widgets.apply, tables[0].tags.keys()),
-        self.widgets.scroll_tags.view('Animation Scroll tags', self.widgets.apply, tables[0].tags.keys()),
-        self.widgets.apply.view())
-    return control_panel_view
+    
+    self._add_select(
+        'reduce_method', 
+        'Dimensionality reduction method',
+        options=[
+            ('pca', 'PCA over averaged reduce_dimensions1'),
+            ('ks', 'Distances are ks-score between histogram of reduce_dimensions1'),
+            ('average', 'Averages over reduce dimensions 1 and 2)')],
+        is_multiple=False,
+        cache_key=None, 
+        default=['pca'])
+    
+    self._add_select(
+        'reduce_dims1',
+        'Dimensionality reduction dims 1', 
+        options=options_from_table(tables[0]),
+        is_multiple=True,
+        cache_key=tables,
+        default=[])
+
+    self._add_select(
+        'reduce_dims2',
+        'Dimensionality reduction dims 2', 
+        options=options_from_table(tables[0]),
+        is_multiple=True,
+        cache_key=tables,
+        default=[])
+
+    self._add_select(
+        'average_dims',
+        'Calculate average for', 
+        options=options_from_table(tables[0]),
+        is_multiple=True,
+        cache_key=tables,
+        default=[])
+
+    self._add_select(
+        'std_dims',
+        'Calculate std for', 
+        options=options_from_table(tables[0]),
+        is_multiple=True,
+        cache_key=tables,
+        default=[])
+
+    self._add_select(
+        'id_tags',
+        'Id tags',
+        options=tables[0].tags.keys(),
+        cache_key=tables,
+        default=['name'])
+
+    self._add_select(
+        'scroll_tags',
+        'Animation Scroll tags',
+        options=tables[0].tags.keys(),
+        cache_key=tables,
+        default=[])
+
+    
+
   
   @cache('multicompare')
   def main_view(self, tables):

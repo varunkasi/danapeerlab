@@ -22,6 +22,7 @@ fix_path(True)
 print 'Done'
 import matplotlib
 matplotlib.use('Agg')
+import urllib
 import logging
 import web
 import os
@@ -43,7 +44,8 @@ urls = (
     '/upload_report', 'UploadReport', 
     '/freecell.chain', 'SaveReport', 
     '/set_value', 'SetValue', 
-    '/report', 'ShowReport', 
+    '/report', 'ShowReport',
+    '/url/(.*)', 'UrlReport',
     '/images/(.*)', 'Images' #this is where the image folder is located....
 )
 app = web.application(urls, globals(), autoreload=False)
@@ -166,19 +168,12 @@ class UploadReport(object):
   def POST(self):
     i = web.input(myfile={})  
     # A hack to make pickle.load work:
-    print dir(settings)
     tmp_file = os.path.join(settings.FREECELL_DIR, 'temp', 'temp_report')
     with open (tmp_file, 'wb') as f:
       f.write(i['myfile'].file.read())
     with open (tmp_file, 'r') as f:              
       base_report = pickle.load(f)
-    if not 'name' in i:
-      i.name = strftime('%d %b %Y %H:%M:%S', gmtime())
-    if not 'author' in i:
-      i.author = 'unknown'
-    with REPORTS.lock:
-      r = REPORTS.new_from_report(base_report, i.name, i.author)
-      raise web.seeother('/report?id=%s' % r.id)   
+    report_from_file(i, base_report)
 
   def GET(self):
     i = web.input()
@@ -187,7 +182,23 @@ class UploadReport(object):
         with open(path, 'rb') as f:
           web.header("Content-Type", 'application/octet-stream') # Set the Header
           return f.read()
-            
+
+def report_from_file(i, base_report):
+  if not 'name' in i:
+    i.name = strftime('%d %b %Y %H:%M:%S', gmtime())
+  if not 'author' in i:
+    i.author = 'unknown'
+  with REPORTS.lock:
+    r = REPORTS.new_from_report(base_report, i.name, i.author)
+    raise web.seeother('/report?id=%s' % r.id)   
+
+class UrlReport(object):
+  def GET(self, url):
+    i = web.input()
+    chain_file = urllib.urlopen(url)
+    base_report = pickle.load(chain_file)
+    chain_file.close()
+    report_from_file(i, base_report)
             
 def startup_tests():
   has_error = False
