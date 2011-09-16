@@ -6,11 +6,15 @@ axes objects
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate
+from collections import namedtuple
 from matplotlib.figure import Figure
 from scriptservices import services 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.cm as cm
 DPI = 100
+
+# TODO(daniv): use this range class.
+#Range = namedtuple('Range', ['min_x', 'min_y', 'max_x', 'max_y'])
 
 class Colorer(object):
   """Picks a color for a key, and remembers the choice.
@@ -46,12 +50,14 @@ def small_ticks(ax):
   for label in  ax.yaxis.get_ticklabels() + ax.xaxis.get_ticklabels():
     label.set_fontsize('xx-small')
 
-def points(ax, datatable, markers):
+def points(ax, datatable, markers, range):
   """ Creates a 2d scatter plot, each datapoint 
   will result in a point drawn.
   """
   points = datatable.get_cols(*markers)
   ax.scatter(points[0], points[1], s=1, marker='o')
+  ax.set_xlim(range[0], range[2])
+  ax.set_ylim(range[1], range[3])
   ax.set_xlabel(str(markers[0]) + '   ', size='x-small')
   ax.set_ylabel(str(markers[1]) + '   ', size='x-small')
   ax.figure.subplots_adjust(bottom=0.15)

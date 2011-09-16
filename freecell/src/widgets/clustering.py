@@ -8,7 +8,7 @@ from biology.tagorder import multiple_tag_sort_key
 from multitimer import MultiTimer
 from operator import itemgetter
 from widget import Widget
-from widgetwithcontrolopanel import WidgetWithControlPanel
+from widgetwithcontrolpanel import WidgetWithControlPanel
 from view import View
 from view import render
 from view import stack_lines
@@ -40,15 +40,6 @@ class ClusterModule(WidgetWithControlPanel):
       return 'Clustering module'
     return '%s over %s' % (self.method_name(), self.widgets.cluster_dims.get_choices()) 
       
-  def get_inputs(self):
-    """ Returns the names input list.
-    """
-    return ['tables']
-    
-  def get_outputs(self):
-    """ Returns the output list.
-    """
-    return ['tables']
   
   def run(self, tables):
     """ Does the clustering.
@@ -72,7 +63,7 @@ class ClusterModule(WidgetWithControlPanel):
         is_multiple=True, 
         cache_key=tables, 
         default=[])
-    return self._control_panel(tables)
+    return self._control_panel(tables)  
   
   def get_cluster_dims(self):
     return self.widgets.cluster_dims.get_choices()

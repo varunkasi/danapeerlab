@@ -343,11 +343,18 @@ class DataTable(AutoReloader):
   def get_cols(self, *dims):
     """ Gets the specified dims as a list of cols
     """
+    dims_not_found = [d for d in dims if not d in self.dims]
+    if dims_not_found:
+      raise Exception('Some dims were not found.\n Dims not found: %s\n Dims in table: %s' % (str(dims_not_found), str(self.dims)))
+    
     return self.get_points(*dims).T
   
   def get_points(self, *dims):
     """ Gets the specified dims as a list of rows
     """
+    dims_not_found = [d for d in dims if not d in self.dims]
+    if dims_not_found:
+      raise Exception('Some dims were not found.\n Dims not found: %s\n Dims in table: %s' % (str(dims_not_found), str(self.dims)))
     indices = [self.dims.index(d) for d in dims]
     return self.data[:,indices]    
   
