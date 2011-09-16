@@ -8,7 +8,7 @@ from biology.tagorder import multiple_tag_sort_key
 from multitimer import MultiTimer
 from operator import itemgetter
 from widget import Widget
-from widgetwithcontrolopanel import WidgetWithControlPanel
+from widgetwithcontrolpanel import WidgetWithControlPanel
 from view import View
 from view import render
 from view import stack_lines
@@ -79,7 +79,7 @@ class SlidingWindow(WidgetWithControlPanel):
     self._add_select(
         'agg_method',
         'From every window take',
-        options=[('avg', 'Average'), ('median', 'Median')],
+        options=[('average', 'Average'), ('median', 'Median')],
         is_multiple=False)
     
     
