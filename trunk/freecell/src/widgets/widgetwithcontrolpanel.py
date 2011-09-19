@@ -65,6 +65,11 @@ class WidgetWithControlPanel(Widget):
     view = widget.view(title, self.widgets.control_panel_apply, id=id, predefined_values=predefined_values, numeric_validation=numeric_validation, comment=comment, non_empty_validation=non_empty_validation, size=size)
     self._control_panel_views.append(view)
      
+  def pre_run(self):
+    """Checks if the module is ready to run."""
+    if not self.widgets.control_panel_apply.clicked_once:
+      raise Exception('Click on \'apply\' to run this module')
+    
   def view(self, *args, **kargs):
     self._add_widget_if_needed('layout', LeftPanel)
     self._add_widget_if_needed('control_panel_apply', ApplyButton)
@@ -76,11 +81,14 @@ class WidgetWithControlPanel(Widget):
     if extra_control_panel_view:
       self._control_panel_views.append(extra_control_panel_view)
     self._control_panel_views.append(self.widgets.control_panel_apply.view())
-    try:
-      main_view = self.main_view(*args, **kargs)
-      if not main_view:
-        main_view = View(self, '')
-    except Exception as e:
-      logging.exception('Exception in main_view')
-      main_view = View(self, str(e))
+    if not self.widgets.control_panel_apply.clicked_once:
+      main_view = View(self, 'Click on \'apply\' to run this module')
+    else:
+      try:
+        main_view = self.main_view(*args, **kargs)
+        if not main_view:
+          main_view = View(self, '')
+      except Exception as e:
+        logging.exception('Exception in main_view')
+        main_view = View(self, str(e))
     return self.widgets.layout.view(main_view, stack_lines(*self._control_panel_views))
