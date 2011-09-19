@@ -225,6 +225,8 @@ class WidgetInChain(Widget):
   def run(self, data):
     self.outputs_from_run = []
     if self.widgets.sub_widget.has_method('run'):
+        if 'pre_run' in dir(self.widgets.sub_widget):
+          self.widgets.sub_widget.pre_run()
         ret =  self.widgets.sub_widget.run(**self.create_input_map(data))
         #self.outputs_from_run = ret.keys()
         return ret
