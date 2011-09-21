@@ -1,4 +1,5 @@
 ﻿#!/usr/bin/env python
+import re
 from cache import make_unique_str
 from cache import CACHE
 from view import View
@@ -71,7 +72,8 @@ class Widget(object):
   def _normalize_id(self, id):
     """ Removes illegal characters from the widget id. The id can appear in HTML, 
     as file name, as part of css. """
-    return id.replace(' ', '').replace('-','').replace('/','_').replace('\\', '_')
+    return re.sub('[^a-zA-Z_0-9]', '_', id)
+    #return id.replace(' ', '').replace('-','').replace('/','_').replace('\\', '_')
 
   def _get_widget(self, name):
     """ Gets a widget with the specified name. """
