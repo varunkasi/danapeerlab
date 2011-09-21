@@ -474,7 +474,7 @@ class DataTable(AutoReloader):
     return table
   
   @cache('mutual_information_tables')
-  def get_mutual_information_table(self, dims_to_use=None, ignore_negative_values=True):
+  def get_mutual_information_table(self, dims_to_use=None, ignore_negative_values=True, use_correlation=False):
     """ Returns a table with mutual information between pairs in dims_to_use. 
     cell i,j is the  mutual information between dims_to_use[i] and dims_to_use[j]. 
     """
@@ -506,9 +506,11 @@ class DataTable(AutoReloader):
             res[j,i] = 0
             res[i,j] = 0
             continue
-        #print arr.shape
-        res[i,j] = mlab.mutualinfo_ap(arr, nout=1)
-        res[j,i] = 0
+        if use_correlation:
+          res[i,j] = np.corrcoef(arr.T[0], arr.T[1])[0,1]
+        else:
+          res[i,j] = mlab.mutualinfo_ap(arr, nout=1)
+        res[j,i] = res[i,j]
         timer.complete_task('%s, %s' % (dims_to_use[i], dims_to_use[j]))
     return DataTable(res, dims_to_use)
     

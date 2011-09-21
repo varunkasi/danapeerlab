@@ -179,11 +179,7 @@ def kde2d_color_hist(
   #print '*'
   
   
-
-def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1, color=None, shift=0):
-  """ Draws a 1d kernel density estimation  histogram. 
-  The values in the plot are multiplied by the norm parameter.
-  """
+def kde1d_data(datatable, marker, min_x=None, max_x=None):
   points = datatable.get_cols(marker)[0]
   range = np.max(points) - np.min(points)
   min_x_ = min_x
@@ -193,8 +189,14 @@ def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1, color=None, shi
   if max_x == None:
     max_x_ = np.max(points) + range / 10
   from mlabwrap import mlab
-  bandwidth, density, xmesh = mlab.kde(
+  return mlab.kde(
       points, float(2**10), float(min_x_), float(max_x_), nout=3)
+
+def kde1d(ax, datatable, marker, min_x=None, max_x=None, norm=1, color=None, shift=0):
+  """ Draws a 1d kernel density estimation  histogram. 
+  The values in the plot are multiplied by the norm parameter.
+  """
+  bandwidth, density, xmesh = kde1d_data(datatable, marker, min_x, max_x)
   density = np.multiply(density, float(norm))
   #print data.xmesh.shape
   #print data.density.shape

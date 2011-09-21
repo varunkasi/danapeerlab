@@ -17,6 +17,7 @@ from layout import Layout
 from timer import Timer
 from expander import Expander
 from miniexpander import MiniExpander
+from correlationmap import CorrelationMap
 from multicompare import MultiCompare
 from freecellmenu import FreecellMenu
 from histogram import HistogramPlot
@@ -105,6 +106,7 @@ CHAINABLE_WIDGETS = [
     ('Scatter Plot', plots.ScatterPlot),
     ('Histogram Plot', HistogramPlot),
     ('Multi Compare', MultiCompare),
+    ('Correlation Map', CorrelationMap),
     ('Sliding Window', SlidingWindow),
     ('Kmeans', KMeansClusterer),
     ('True Scatter Plot', plots.TrueScatterPlot),

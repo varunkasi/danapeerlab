@@ -20,6 +20,7 @@ import cPickle as pickle
 import sys
 import types
 import inspect
+import re
 from attrdict import AttrDict
 import numpy as np
 
@@ -28,6 +29,8 @@ class Cache(object):
     self.cache_dir = cache_dir
   
   def put(self, key, val, sub_dir='', file_prefix=''):
+    sub_dir = re.sub('[^a-zA-Z_0-9]', '_', sub_dir)
+    file_prefix = re.sub('[^a-zA-Z_0-9]', '_', file_prefix)
     def ensure_dir(f):
       d = os.path.dirname(f)
       if not os.path.exists(d):
