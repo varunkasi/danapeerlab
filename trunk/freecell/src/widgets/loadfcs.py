@@ -84,7 +84,7 @@ class LoadFcs(Widget):
     """
     self.widgets.fcs_dir.guess_or_remember('load_fcs fcs_dir', '')
     dirname = self.widgets.fcs_dir.value_as_str()
-    if os.path.exists(dirname):
+    if os.path.exists(dirname) and os.path.isdir(dirname):
       files = [f for f in os.listdir(dirname) if os.path.isfile(os.path.join(dirname, f))]
     else:
       return stack_lines(
