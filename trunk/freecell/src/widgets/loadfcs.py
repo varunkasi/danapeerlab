@@ -43,7 +43,7 @@ class LoadFcs(Widget):
     
   def title(self, short):
    dirname = self.widgets.fcs_dir.value_as_str()
-   if not dirname or not os.path.exists(dirname):
+   if not dirname or not os.path.exists(dirname) or not os.path.isdir(dirname):
       return 'Please enter a valid path for a directory with FCS files'
    return os.path.split(dirname)[-1]
 
@@ -54,7 +54,7 @@ class LoadFcs(Widget):
     # stop the chain, but the user will be able to pick a new path as the view method
     # is called before the run method. 
     dirname = self.widgets.fcs_dir.value_as_str()
-    if not os.path.exists(dirname):
+    if not os.path.exists(dirname) or not os.path.isdir(dirname):
       raise Exception('Could not find %s' % dirname)
 
     loaded_tables = []
