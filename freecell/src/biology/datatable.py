@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import logging
+from copy import copy
 from odict import OrderedDict
 import sys
 from StringIO import StringIO
@@ -128,9 +129,13 @@ class DataTable(AutoReloader):
     if name != None:
       self.tags['name'] = name
 
-  def __hash__(self):
-    return hash(
-        hashlib.sha1(self.data.flatten()).hexdigest())
+  def hash_table(self):
+    if not 'hash_cache' in dir(self):
+      h = hashlib.sha1()
+      h.update(self.data.flatten())
+      h.update(repr(self.dims))
+      self.hash_cache = h.hexdigest()    
+    return self.hash_cache
 
   def __getitem__(self, dim):
     return self.get(dim)
@@ -165,9 +170,11 @@ class DataTable(AutoReloader):
     dim_i = self.dims.index(dim)
     return self.data[index, dim_i]
    
+  @cache('min')
   def min(self, dim):
     return np.min(self.get_cols(dim)[0])
 
+  @cache('max')
   def max(self, dim):
     return np.max(self.get_cols(dim)[0])
 
@@ -431,6 +438,72 @@ class DataTable(AutoReloader):
     data_copy = np.arcsinh(data_copy * factor)
     table = DataTable(data_copy, self.dims, self.legends, self.tags.copy())   
     return table
+    
+  def ratio(self, dims, divider_dim, min_value=0.1):
+    """This will create a new datatable with the dims in dims divided by the values
+    of the divider dim column. 
+    If min_value is not None, then when we evaluate a/b:
+    if b<min_value, a/b = a/min_value.
+    """
+    divider = self.get_cols(divider_dim)[0].copy()
+    if min_value:
+      divider[divider < min_value] = min_value
+    new_data = self.data.copy()
+    idx = [self.dims.index(dim) for dim in dims]
+    new_data[:,idx] = new_data[:,idx] / np.array([divider]).T
+    return DataTable(new_data, self.dims, self.legends, self.tags.copy()) 
+      
+    
+  def discretize(self, dims, bins, new_dim_names=None):
+    """ Returns a datatable with the given dimensions discretized. 
+    If new_dim_name is None we will overwrite the given dim. 
+    If bins is a number then we will divide the value range into equal bins.
+    If bins is a list, then the list items determine the edge of the bins, so the
+    bins are of the form [min, val_1], [val_1, val_2],.... [val_n, max]
+    The actual values after the conversion are the median value of all the values
+    in the bin.
+    We will add a legend string of the form '0.0 <= val < 1.0'.
+    If values is a list of values then we match every value to the corresponding bin.
+    """
+    if new_dim_names:
+      assert len(new_dim_names) == len(dims)
+    new_data = self.data.copy()
+    new_dims = copy(self.dims)
+    new_legends = copy(self.legends)
+    for i, dim in enumerate(dims):
+      if type(bins) in (int,):
+        bins = bins * 1j
+      if type(bins) in (int, complex):
+        bins = np.r_[self.min(dim):self.max(dim):bins]
+      p = self.get_cols(dim)[0]
+      idx = np.digitize(p, bins)
+      vals = np.zeros(len(idx))
+      legend = {}
+      for i in xrange(len(bins) + 1):
+        idx_i = idx == i
+        if not np.any(idx_i):
+          continue
+        val = np.median(p[idx_i])
+        val = float(int(val)*100)/100
+        vals[idx_i] = val
+        
+        if i == len(bins):
+          print 'yush'
+          legend[val] = '%f <= %f < %f' % (bins[i-1], val, self.max(dim))
+        elif i == 1:
+          legend[val] = '%f <= %f < %f' % (self.min(dim), val, bins[i])
+        else:
+          legend[val] = '%f <= %f < %f' % (bins[i-1], val, bins[i])
+      if new_dim_names:
+        np.concatenate((new_data, np.array([vals]).T), axis=1)
+        new_dims += [new_dim_names[i]]
+        new_legends += [legend]
+      else:
+        dim_index = self.dims.index(dim)
+        new_data[:,dim_index] = vals
+        new_legends[dim_index] = legend
+    return DataTable(new_data, new_dims, new_legends, self.tags.copy())
+    
     
   def add_reduced_dims(self, method, no_dims, dims_to_use=None, *args, **kargs):
     """ Add new columns with values determined by dimensionality reduction

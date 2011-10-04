@@ -19,8 +19,15 @@ class Input(Widget):
   def value_as_str(self):
     return self.values.value
 
+  def value_as_int(self):
+    return int(self.values.value)
+
   def value_as_float(self):
     return float(self.values.value)
+    
+  def value_as_float_list(self):
+    splitted = self.values.value.split(',')
+    return [float(val) for val in splitted]
 
   def view(self, text, apply, predefined_values=[], id=None, numeric_validation=True, comment='', non_empty_validation=True, size=20):
     if not id:

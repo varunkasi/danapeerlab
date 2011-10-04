@@ -36,9 +36,11 @@ def ax_size_pixels(ax):
   pos = ax.get_position()
   return pos.width * fig_width * DPI, pos.height * fig_height * DPI
 
-def new_axes(x_size=256, y_size=256):
+def new_axes(x_size=256, y_size=256, min_x=256, min_y=256):
   """ Create a new axes object with the specified size in pixels
   """
+  x_size = max(x_size, min_x)
+  y_size = max(y_size, min_y)
   return Figure(figsize=(x_size / DPI, y_size / DPI)).add_subplot(111)
 
 def new_figure(x_size=256, y_size=256):
@@ -63,6 +65,13 @@ def points(ax, datatable, markers, range):
   ax.figure.subplots_adjust(bottom=0.15)
   
   
+
+def boxplot(ax, datatable, dims):
+  """Draws a boxplot for the specified dimensions"""  
+  data = datatable.get_cols(*dims)
+  ax.boxplot(list(data))
+  ax.set_xticklabels(dims)
+
 def histogram_scatter(ax, datatable, markers, range=None, color_marker=None,
     min_cells_per_bin=1, no_bins_x=256j, no_bins_y=256j, interpolation='nearest'):
   """ Draws a 2d histogram of the given markers in the given range.

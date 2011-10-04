@@ -26,6 +26,9 @@ from clustering import KMeansClusterer
 import plots
 from network import Network
 from slidingwindow import SlidingWindow
+from discretize import Discretize
+from boxplot import BoxPlot
+from ratio import Ratio
 from populationpicker import PopulationPicker
 
 """ A chain is a special widget that allows users to create interactive chains
@@ -105,9 +108,12 @@ CHAINABLE_WIDGETS = [
     ('Density Plot', plots.DensityPlot),
     ('Scatter Plot', plots.ScatterPlot),
     ('Histogram Plot', HistogramPlot),
+    ('Box Plot', BoxPlot),
     ('Multi Compare', MultiCompare),
     ('Correlation Map', CorrelationMap),
     ('Sliding Window', SlidingWindow),
+    ('Ratio', Ratio),
+    ('Discretize', Discretize),
     ('Kmeans', KMeansClusterer),
     ('True Scatter Plot', plots.TrueScatterPlot),
     ('Function Plot', plots.FunctionPlot),
