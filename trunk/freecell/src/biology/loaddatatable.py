@@ -179,6 +179,7 @@ def fcsextract(filename):
 
 
   # Load data with numpy.
+  logging.info('data type is %s%s' % (endian, datatype, ))
   dt = np.dtype(('%s%s' % (endian, datatype, ), num_dims))
   data_file = open(fcs_file_name,'rb')
   with data_file:

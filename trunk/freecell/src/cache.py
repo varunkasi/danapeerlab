@@ -134,11 +134,7 @@ def make_unique_str(obj):
     vals_str = map(make_unique_str, vals)
     return '{%s}' % comma_join(['%s: %s' % (k,v) for k,v in zip(keys_str, vals_str)])
   elif type(obj) == DataTable:
-    h = hashlib.sha1()
-    h.update(obj.data.flatten())
-    h.update(repr(obj.dims))
-    #dims_str = make_unique_str(obj.dims)
-    return '<DataTable %s >' % (h.hexdigest())
+    return '<DataTable %s >' % (obj.hash_table())
   elif isinstance(obj, Widget):
     widget_name = type(obj).__name__
     sub_widgets_str = make_unique_str(obj.widgets)

@@ -35,9 +35,11 @@ class SlidingWindow(WidgetWithControlPanel):
     """Title for the module, the short version is displayed in menus, 
     the long version is displayed in the expander title.
     """
-    
+    if not 'agg_method' in self.widgets:
+      return 'Sliding Window'
     return 'Windows: %s over %s' % (self.widgets.agg_method.get_choice(), self.widgets.window_dim.get_choice()) 
   
+  @cache('sliding')
   def run(self, tables):
     """ Does the clustering.
     """
