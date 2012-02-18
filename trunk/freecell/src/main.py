@@ -74,7 +74,7 @@ def startup_tests():
       print 'http://sourceforge.net/projects/matplotlib/files/matplotlib/matplotlib-1.1.0/matplotlib-1.1.0.win32-py2.7.exe'
     print '*************************************************************************'
     return False
-  return not True
+  return True
   
 
 if not startup_tests():
