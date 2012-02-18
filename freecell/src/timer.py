@@ -3,7 +3,8 @@ import sys
 import logging
 
 class Timer(object):
-  def __init__(self, name):
+  def __init__(self, name, wait_before_print_sec=3):
+    self.wait_before_print_sec = wait_before_print_sec
     if sys.platform == "win32":
       # On Windows, the best timer is time.clock()
       self.timer = time.clock
@@ -19,4 +20,5 @@ class Timer(object):
   def __exit__(self, type, value, traceback):
     self.end = self.timer()
     elapsed = self.end - self.start
-    logging.info('%s took %.2f seconds' % (self.name, elapsed))
+    if elapsed > self.wait_before_print_sec:
+      logging.info('%s took %.2f seconds' % (self.name, elapsed))

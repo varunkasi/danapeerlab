@@ -14,8 +14,71 @@ Some of the services Freecell provides are:
   - Full matlab integration (see depends/common/python/mlabwrap.py)
 
 """
+import os
+import sys
+def startup_tests():
+  import struct;
+  python_bits = ( 8 * struct.calcsize("P"))
+  is_win = sys.platform == 'win32'
+  is_mac = sys.platform =='darwin'
+  has_error = False
 
+  if sys.version_info < (2,7) or python_bits != 32:
+    print '*************************************************************************'
+    print 'You are running Freecell with the wrong version of Python.'
+    print
+    print 'Please open the following link to install Python2.7-32bit:'
+    if is_mac:
+      print 'http://python.org/ftp/python/2.7.2/python-2.7.2-macosx10.3.dmg'
+    if is_win:
+      print 'http://python.org/ftp/python/2.7.2/python-2.7.2.msi'
+    print '*************************************************************************'
+    print 
+    print 'Your current Python version is: %s' % sys.version_info
+    print 'You are using python %d bits.' % python_bits
 
+    return False
+
+  try:
+    import numpy
+  except:
+    print '*************************************************************************'
+    print 'numpy seems to be missing, please install it from:'
+    if is_mac:
+      print 'http://sourceforge.net/projects/numpy/files/NumPy/1.6.1/numpy-1.6.1-py2.7-python.org-macosx10.3.dmg'
+    if is_win:
+      print 'http://sourceforge.net/projects/numpy/files/NumPy/1.6.1/numpy-1.6.1-win32-superpack-python2.7.exe'
+    print '*************************************************************************'
+    return False
+
+  try:
+    import scipy
+  except:
+    print '*************************************************************************'
+    print 'scipy seems to be missing, please install it from:'
+    if is_mac:
+      print 'http://sourceforge.net/projects/scipy/files/scipy/0.10.0/scipy-0.10.0-py2.7-python.org-macosx10.3.dmg'
+    if is_win:
+      print 'http://sourceforge.net/projects/scipy/files/scipy/0.10.0/scipy-0.10.0-win32-superpack-python2.7.exe'
+    print '*************************************************************************'
+    return False
+
+  try:
+    import matplotlib
+  except:
+    print '*************************************************************************'
+    print 'matplotlib seems to be missing, please install it from:'
+    if is_mac:
+      print 'http://sourceforge.net/projects/matplotlib/files/matplotlib/matplotlib-1.1.0/matplotlib-1.1.0-py2.7-python.org-macosx10.3.dmg'
+    if is_win:
+      print 'http://sourceforge.net/projects/matplotlib/files/matplotlib/matplotlib-1.1.0/matplotlib-1.1.0.win32-py2.7.exe'
+    print '*************************************************************************'
+    return False
+  return not True
+  
+
+if not startup_tests():
+  sys.exit()
 from depends import fix_path
 print 'Fixing Path'
 fix_path(True)
@@ -25,7 +88,6 @@ matplotlib.use('Agg')
 import urllib
 import logging
 import web
-import os
 import cPickle as pickle
 import settings
 from time import gmtime, strftime
@@ -199,59 +261,27 @@ class UrlReport(object):
     base_report = pickle.load(chain_file)
     chain_file.close()
     report_from_file(i, base_report)
-            
-def startup_tests():
-  has_error = False
-  try:
-    import numpy
-  except:
-    print 'numpy seems to be missing, please install it.'    
-    has_error = True
-  try:
-    import scipy
-  except:
-    print 'scipy seems to be missing, please install it.'
-    has_error = True
-  try:
-    import matplotlib
-  except:
-    print 'matplotlib seems to be missing, please install it.'
-    has_error = True
-  try:
-    import settings
-  except:
-    print 'settings file seems to be missing. Please edit settings/_settings.py and save it as settings/settings.py'
-    has_error = True
-  if has_error:
-    return False
-  if not os.path.exists(os.path.join(settings.FREECELL_DIR, 'src', 'main.py')):
-    import depends
-    print 'FREECELL_DIR in settings file seems to be wrong. Please edit settings/settings.py. You might want to try %s' % os.path.split(os.path.dirname(depends.__file__))[0]
-    has_error = True
-    
-  return not has_error
-  # TODO: check experiments, matlab path.
+
   
   
             
 if __name__ == "__main__":
-    if startup_tests():
-      # configuer logging for the application:
-      logging.getLogger('').setLevel(logging.DEBUG)
-      stream_handler = logging.StreamHandler()
-      formatter = logging.Formatter(
-          "[%(levelname)s] %(message)s", )
-      stream_handler.setFormatter(formatter)
-      logging.getLogger('').addHandler(stream_handler)   
+  # configuer logging for the application:
+  logging.getLogger('').setLevel(logging.DEBUG)
+  stream_handler = logging.StreamHandler()
+  formatter = logging.Formatter(
+      "[%(levelname)s] %(message)s", )
+  stream_handler.setFormatter(formatter)
+  logging.getLogger('').addHandler(stream_handler)   
 
-      # To serve from the static dir:
-      os.chdir(settings.FREECELL_DIR)
-      
-      # Use django default settings:
-      from django.conf import settings as django_settings
-      django_settings.configure()
-      
-      # Start report runner
-      runner.start()
-      app.run()
-      runner.end()
+  # To serve from the static dir:
+  os.chdir(settings.FREECELL_DIR)
+
+  # Use django default settings:
+  from django.conf import settings as django_settings
+  django_settings.configure()
+
+  # Start report runner
+  runner.start()
+  app.run()
+  runner.end()

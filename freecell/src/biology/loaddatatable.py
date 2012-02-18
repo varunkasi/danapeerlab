@@ -235,7 +235,8 @@ def load_data_table(filename, extra_dims=[], extra_vals=[], extra_legends=[], ar
     data = events
     indices_to_transform = [i for i,n in enumerate(dims) if n and n.needs_transform]
     #data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform] / 5)
-    data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform] * arcsin_factor)
+    if arcsin_factor:
+      data[:,indices_to_transform] = np.arcsinh(data[:,indices_to_transform] * arcsin_factor)
     
     # add extra dims, data:
     legends = [None] * len(dim_names) + extra_legends
