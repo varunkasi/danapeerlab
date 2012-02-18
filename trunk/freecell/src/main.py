@@ -78,6 +78,7 @@ def startup_tests():
   
 
 if not startup_tests():
+  raw_input("Press Enter to continue...")
   sys.exit()
 from depends import fix_path
 print 'Fixing Path'
