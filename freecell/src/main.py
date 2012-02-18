@@ -78,7 +78,6 @@ def startup_tests():
   
 
 if not startup_tests():
-  raw_input("Press Enter to continue...")
   sys.exit()
 from depends import fix_path
 print 'Fixing Path'
@@ -282,6 +281,10 @@ if __name__ == "__main__":
   from django.conf import settings as django_settings
   django_settings.configure()
 
+  print '*************************************************************************'
+  print 'Open your browser and type localhost:8080 to access Freecell GUI'
+  print '*************************************************************************'
+  
   # Start report runner
   runner.start()
   app.run()
