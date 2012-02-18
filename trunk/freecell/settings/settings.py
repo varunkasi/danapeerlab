@@ -3,8 +3,8 @@ FREECELL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MATLAB_PATH = r'guess'
 EXPERIMENTS = {
     'AML with T-Sne data' : (
-        r'/Users/daniv/projects/data/aml_tsne/aml.index',
+        os.path.combine(os.path.dirname(FREECELL_DIR), 'aml_tsne', 'aml_tsne.index')
         ['patient']),
-    'cytof54 erin clustering' : (
-        r'/Users/daniv/projects/data/cytof54_clustered_erin/cytof54.index',
+    'Cytof54 erin clustering' : (
+        os.path.combine(os.path.dirname(FREECELL_DIR), 'cytof54_clustered_erin', 'cytof54_clustered_erins.index')
         ['marrow', 'cell_type', 'stim'])}
