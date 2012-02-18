@@ -92,7 +92,7 @@ class AbstractPlot(WidgetWithControlPanel):
         numeric_validation=False,
         non_empty_validation=False,
         size=8,
-        predefined_values=[('Fit per plot', 'auto'), ('Fit for all plots', 'common')])
+        predefined_values=[('Fit per plot', 'auto'), ('Fit for row plots', 'common')])
 
     self._add_input(
         'min_y',
@@ -102,7 +102,7 @@ class AbstractPlot(WidgetWithControlPanel):
         numeric_validation=False,
         non_empty_validation=False,
         size=8,
-        predefined_values=[('Fit per plot', 'auto'), ('Fit for all plots', 'common')])
+        predefined_values=[('Fit per plot', 'auto'), ('Fit for row plots', 'common')])
     
     self._add_input(
         'max_x',
@@ -112,7 +112,7 @@ class AbstractPlot(WidgetWithControlPanel):
         numeric_validation=False,
         non_empty_validation=False,
         size=8,
-        predefined_values=[('Fit per plot', 'auto'), ('Fit for all plots', 'common')])
+        predefined_values=[('Fit per plot', 'auto'), ('Fit for row plots', 'common')])
 
     self._add_input(
         'max_y',
@@ -122,7 +122,7 @@ class AbstractPlot(WidgetWithControlPanel):
         numeric_validation=False,
         non_empty_validation=False,
         size=8,
-        predefined_values=[('Fit per plot', 'auto'), ('Fit for all plots', 'common')])
+        predefined_values=[('Fit per plot', 'auto'), ('Fit for row plots', 'common')])
     
     self._end_section('View Area', False)
     
@@ -271,6 +271,7 @@ class AbstractPlot(WidgetWithControlPanel):
     #ret['view'] = '\n'.join(texts)
     return ret
 
+  @cache('plots_main_view')
   def main_view(self, tables):
     if 'all' in self.widgets.tables_to_show.get_choices():
       tables_to_show = tables
@@ -295,13 +296,16 @@ class AbstractPlot(WidgetWithControlPanel):
         # We give the view function a predefined id so that we can reference this viewed instance from
         # the areaselect widget in gating mode.  
         widget_id = self._get_unique_id()
-        fig_view = fig_widget.view(fig, id=widget_id)
+        if fig:
+          fig_view = fig_widget.view(fig, id=widget_id)
+          if self.enable_gating:
+            area_select_widget = self._add_widget_if_needed('area_select_%s' % widget_id, AreaSelect)
+            area_select_view = area_select_widget.view(
+                widget_id, self.gate_min_x_id, self.gate_max_x_id, self.gate_min_y_id, self.gate_max_y_id, fig_range)
+            fig_view = stack_lines(fig_view, area_select_view)          
+        else:
+          fig_view = View(self, '')
         # On gating mode we want to add areaselect.
-        if self.enable_gating:
-          area_select_widget = self._add_widget_if_needed('area_select_%s' % widget_id, AreaSelect)
-          area_select_view = area_select_widget.view(
-              widget_id, self.gate_min_x_id, self.gate_max_x_id, self.gate_min_y_id, self.gate_max_y_id, fig_range)
-          fig_view = stack_lines(fig_view, area_select_view)
         line.append(stack_lines(fig_view, extra_view))
       lines.append(line)  
     if len(tables_to_show) == 1:
@@ -322,8 +326,13 @@ class DensityPlot(AbstractPlot):
     
   def _draw_figures_internal(self, table, dim_x, dim_y, range):
     fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
-    axes.kde2d_color_hist(fig, table, (dim_x, dim_y), range)
-    return {'fig': fig}
+    try:
+      axes.kde2d_color_hist(fig, table, (dim_x, dim_y), range)
+      return {'fig': fig}
+    except Exception as e:
+      logging.exception('Exception in DensityPlot')
+      return {'fig': (None, View(self, str(e)))}
+    
 
 class FunctionPlot(AbstractPlot):
   def __init__(self, id, parent, enable_gating=False):
@@ -343,9 +352,14 @@ class FunctionPlot(AbstractPlot):
 
   def _draw_figures_internal(self, table, dim_x, dim_y, range):
     fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
-    axes.kde2d_color_hist(fig, table, (dim_x, dim_y), range, 'y', self.widgets.min_density_in_column.value_as_float())
-    corr_view = View(None, 'corr: %.2f; mi: %.2f' % (table.get_correlation(dim_x, dim_y), table.get_mutual_information(dim_x, dim_y)))
-    return {'fig': (fig, corr_view)}
+    try:
+      axes.kde2d_color_hist(fig, table, (dim_x, dim_y), range, 'y', self.widgets.min_density_in_column.value_as_float())
+      corr_view = View(None, 'corr: %.2f; mi: %.2f' % (table.get_correlation(dim_x, dim_y), table.get_mutual_information(dim_x, dim_y)))
+      return {'fig': (fig, corr_view)}
+    except Exception as e:
+      logging.exception('Exception in DensityPlot')
+      return {'fig': (None, View(self, str(e)))}
+    
 
 class ScatterPlot(AbstractPlot):
   def __init__(self, id, parent, enable_gating=False):
@@ -423,27 +437,30 @@ class ScatterPlot(AbstractPlot):
     min_cells = int(self.widgets.min_cells_in_bin.values.value)-1
     ret = OrderedDict()
     for color in colors:
-      if color == 'none':
-        color = None
-      fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
-      ax = fig.add_subplot(111)
+      try:
+        if color == 'none':
+          color = None
+        fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
+        ax = fig.add_subplot(111)
       
-      hist, extent = axes.histogram_scatter(ax, table, (dim_x, dim_y), range, color, min_cells_per_bin = min_cells, no_bins_x=ax_width*1j, no_bins_y=ax_height*1j, interpolation=interpolation)
-      if self.widgets.contour.get_choices()[0] == 'regular':
-        cs = ax.contour(hist, extent=extent, origin='lower')
-        #ax.clabel(cs, inline=1, fontsize=10)
+        hist, extent = axes.histogram_scatter(ax, table, (dim_x, dim_y), range, color, min_cells_per_bin = min_cells, no_bins_x=ax_width*1j, no_bins_y=ax_height*1j, interpolation=interpolation)
+        if self.widgets.contour.get_choices()[0] == 'regular':
+          cs = ax.contour(hist, extent=extent, origin='lower')
+          #ax.clabel(cs, inline=1, fontsize=10)
         
-      elif self.widgets.contour.get_choices()[0] == 'smooth':
-        display_data, extent, density, X, Y = axes.kde2d_data(table, (dim_x, dim_y), range, res=ax_width)
-        #np.r_[0:np.max(display_data):10j][1:]
-        levels = np.array([0.1, 0.2, 0.3, 0.35, 0.4, 0.5, 0.6, 0.8, 1]) * np.max(display_data)
-        if color!=None:
-          cs = ax.contour(display_data, extent=extent, origin='lower', levels=levels, colors='black')
-        else:
-          cs = ax.contour(display_data, extent=extent, origin='lower', levels=levels)
-        #ax.clabel(cs, inline=1, fontsize=10)
-      ret[str(color)] = fig
-    print axes.ax_size_pixels(ax)
+        elif self.widgets.contour.get_choices()[0] == 'smooth':
+          display_data, extent, density, X, Y = axes.kde2d_data(table, (dim_x, dim_y), range, res=ax_width)
+          #np.r_[0:np.max(display_data):10j][1:]
+          levels = np.array([0.1, 0.2, 0.3, 0.35, 0.4, 0.5, 0.6, 0.8, 1]) * np.max(display_data)
+          if color!=None:
+            cs = ax.contour(display_data, extent=extent, origin='lower', levels=levels, colors='black')
+          else:
+            cs = ax.contour(display_data, extent=extent, origin='lower', levels=levels)
+          #ax.clabel(cs, inline=1, fontsize=10)
+        ret[str(color)] = fig
+      except Exception as e:
+        logging.exception('Exception in ScatterPlot')
+        ret[str(color)] = (None, View(self, str(e)))
     return ret
 
 
@@ -459,10 +476,16 @@ class TrueScatterPlot(AbstractPlot):
 
   def _draw_figures_internal(self, table, dim_x, dim_y, range):
     ret = OrderedDict();
-    fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
-    ax = fig.add_subplot(111)
-    axes.points(ax, table, (dim_x, dim_y), range)
-    ret[0] = fig;
+    try:
+      if table.num_cells > 10000:
+        raise Exception('table is too big')  
+      fig = axes.new_figure(FIG_SIZE_X, FIG_SIZE_Y)
+      ax = fig.add_subplot(111)
+      axes.points(ax, table, (dim_x, dim_y), range)
+      ret[0] = fig;
+    except Exception as e:
+      logging.exception('Exception in ScatterPlot')
+      ret[0] = (None, View(self, str(e)))  
     return ret
 
 

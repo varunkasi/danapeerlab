@@ -18,6 +18,7 @@ from autoreloader import AutoReloader
 from scriptservices import services
 from cache import cache
 from multitimer import MultiTimer
+from timer import Timer
 import hashlib
 
 DimRange = namedtuple('DimRange', ['dim','min', 'max'])
@@ -406,11 +407,38 @@ class DataTable(AutoReloader):
     final = np.logical_or(test1, test2)   
     return DataTable(self.data[final], self.dims, self.legends, self.tags.copy())
 
-    
+  
+  def window_agg_using_bottleneck(self, progression_dim, window_size=1000, overlap=500, agg_method='median'):
+    """Uses bottleneck to calculate windows agg.
+    """
+    import bottleneck as bn
+    # first sort by the given dim:
+    xdim_index = self.dims.index(progression_dim)
+    sorted_data = self.data[self.data[:,xdim_index].argsort(),]
+    with Timer('bottleneck window'):
+      if agg_method == 'median':
+        agg_data = bn.move_median(sorted_data, window_size, axis=0)
+      elif agg_method == 'average':
+        agg_data = bn.move_mean(sorted_data, window_size, axis=0)
+      else:
+        raise Exception('Unknown agg method')
+    # First rows are nan because they don't contain a full window, let's remove them:
+    agg_data = agg_data[window_size - 1:]
+    skip = window_size - overlap
+    if skip > 1:
+      agg_data = agg_data[::skip]
+    return DataTable(agg_data, self.dims, self.legends, self.tags.copy())
+      
   def window_agg(self, progression_dim, window_size=1000, overlap=500, agg_method='median'):
     """ Creates a sliding window that moves over the specified
     dimension and aggregates all values per window
     """
+    # First try using bottleneck, ignoring overlap
+    try:
+       return self.window_agg_using_bottleneck(progression_dim, window_size, overlap, agg_method)
+    except ImportError:
+      pass
+      
     window_size = int(window_size)
     overlap = int(overlap)
     # first sort by the given dim:
@@ -418,13 +446,34 @@ class DataTable(AutoReloader):
     sorted_data = self.data[self.data[:,xdim_index].argsort(),]
     # create windows:
     from segmentaxis import segment_axis
-    seg_data = segment_axis(sorted_data, window_size, overlap, axis=0)
-    if agg_method == 'median':
-      agg_data = np.median(seg_data, axis=1)   
-    elif agg_method == 'average':
-      agg_data = np.average(seg_data, axis=1)   
-    else:
-      raise Exception('Unknown agg method')
+    
+    with Timer('segment_axis'):
+      seg_data = segment_axis(sorted_data, window_size, overlap, axis=0)
+    
+    # we want to calculate the median in iterations, so that we don't run 
+    # out of memory when sorting the strides. Maybe this is unnecessary 
+    # for average, but we do it for it as well.
+    min_values_per_iteration = 50*1000000.
+    values_per_window = seg_data.shape[1] * seg_data.shape[2]
+    windows_per_iteration = np.floor(min_values_per_iteration / values_per_window)
+    start_win = 0
+    agg_data = None
+    while start_win < seg_data.shape[0]:
+      iteration_data = seg_data[start_win:start_win + windows_per_iteration]
+      if agg_method == 'median':
+        with Timer('Median over %d windows' % windows_per_iteration):
+          iteration_agg_data = np.median(seg_data, axis=1)   
+      elif agg_method == 'average':
+        iteration_agg_data = np.average(seg_data, axis=1)   
+      else:
+        raise Exception('Unknown agg method')
+      if agg_data == None:
+        agg_data = iteration_agg_data
+      else:
+        agg_data = np.concatenate((agg_data, iteration_agg_data))
+      start_win += windows_per_iteration
+      print start_win
+
     return DataTable(agg_data, self.dims, self.legends, self.tags.copy())
   
   def log_transform(self):
@@ -495,7 +544,7 @@ class DataTable(AutoReloader):
         else:
           legend[val] = '%f <= %f < %f' % (bins[i-1], val, bins[i])
       if new_dim_names:
-        np.concatenate((new_data, np.array([vals]).T), axis=1)
+        new_data = np.concatenate((new_data, np.array([vals]).T), axis=1)
         new_dims += [new_dim_names[i]]
         new_legends += [legend]
       else:
