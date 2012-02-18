@@ -6,5 +6,5 @@ EXPERIMENTS = {
         os.path.join(os.path.join(FREECELL_DIR), 'aml_tsne', 'aml_tsne.index'),
         ['patient']),
     'Cytof54 erin clustering' : (
-        os.path.join(os.path.join(FREECELL_DIR), 'cytof54_clustered_erin', 'cytof54_clustered_erins.index'),
+        os.path.join(os.path.join(FREECELL_DIR), 'cytof54_clustered_erin', 'cytof54_clustered_erin.index'),
         ['marrow', 'cell_type', 'stim'])}
