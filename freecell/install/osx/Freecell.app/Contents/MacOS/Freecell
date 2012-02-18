@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Determine script dir
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
+SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+open $SCRIPT_DIR/Freecell.command
